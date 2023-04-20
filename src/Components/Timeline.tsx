@@ -1,9 +1,9 @@
 import { useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { composeCurrentFrame, setCurrentFrame } from "../store/action";
 
 const Timeline: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
-  const [currentFrame, setCurrentFrame] = useState(0);
   const rulerRef = useRef(null);
   const trackDuration = state.videoTrack.length
     ? state.videoTrack.reduce(
@@ -11,6 +11,7 @@ const Timeline: React.FC = () => {
         0
       )
     : 0;
+  composeCurrentFrame();
   return (
     <div
       style={{
@@ -24,19 +25,20 @@ const Timeline: React.FC = () => {
         ref={rulerRef}
         style={{
           height: "16px",
-          width: `${trackDuration * 2}px`,
+          width: `${trackDuration ? (trackDuration - 1) * 2 : 0}px`,
           backgroundColor: "red",
-          borderRadius: '4px'
+          borderRadius: "4px",
         }}
         onMouseDown={function (e) {
           let offsetX =
             Math.round(e.clientX - (rulerRef.current as any).clientLeft) / 2;
-          if (offsetX <= trackDuration) setCurrentFrame(Math.round(offsetX));
+          if (offsetX <= trackDuration - 1)
+            setCurrentFrame(Math.round(offsetX));
         }}
         onMouseMove={function (e) {
           let offsetX =
             Math.round(e.clientX - (rulerRef.current as any).clientLeft) / 2;
-          if (e.buttons && offsetX <= trackDuration)
+          if (e.buttons && offsetX <= trackDuration - 1)
             setCurrentFrame(Math.round(offsetX));
         }}
       />
@@ -47,32 +49,40 @@ const Timeline: React.FC = () => {
             style={{
               display: "inline-block",
               height: "56px",
-              width: `${videoTrackItem.duration * 2}px`,
+              width: `${(videoTrackItem.duration - 1) * 2}px`,
+              backgroundColor: "#666",
               backgroundImage: `url(${
                 state.mediaFiles.find(
                   (i: MediaFile) => i.id === videoTrackItem.mediaFileId
                 ).thumbnailDataUrl
               })`,
-              backgroundSize: "cover",
-              backgroundPosition: "center center",
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "contain",
+              backgroundPosition: "left center",
               color: "#FFF",
               textShadow: "0 2px 4px #000",
               borderRadius: "8px",
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
-            {state.mediaFiles.find(
+            <div>
+              {
+                state.mediaFiles.find(
                   (i: MediaFile) => i.id === videoTrackItem.mediaFileId
-                ).fileName}
+                ).fileName
+              }
+            </div>
+
+            <div>{videoTrackItem.duration}</div>
           </div>
         ))}
       </div>
       <div
         style={{
           position: "absolute",
-          left: `${currentFrame * 2}px`,
+          left: `${state.currentFrame * 2}px`,
           top: "0px",
           width: "1px",
           height: "100%",

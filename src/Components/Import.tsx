@@ -2,8 +2,10 @@ import { App, theme } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { importFiles } from "../store/action";
+import { useSelector } from "react-redux";
 
 const Import: React.FC = () => {
+  const state: any = useSelector((state: any) => state.reducer);
   const { token } = theme.useToken();
   const { message, modal } = App.useApp();
   const [mask, setMask] = useState(false);
@@ -91,6 +93,25 @@ const Import: React.FC = () => {
         />
         <div style={{ color: token.colorTextLightSolid, fontSize: "24px" }}>
           导入
+        </div>
+      </div>
+      <div
+        style={{
+          display: state.importing ? "flex" : "none",
+          zIndex: 1,
+          position: "fixed",
+          left: 0,
+          top: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: token.colorBgMask,
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div style={{ color: token.colorTextLightSolid, fontSize: "24px" }}>
+          正在导入文件
         </div>
       </div>
     </>

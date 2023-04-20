@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import Import from "./Components/Import";
 import DebugPanel from "./Components/DebugPanel";
@@ -6,10 +6,12 @@ import MediaFiles from "./Components/MediaFiles";
 import Preview from "./Components/Preview";
 import Properties from "./Components/Properties";
 import Timeline from "./Components/Timeline";
+import { initFF } from "./store/action";
 
 function App() {
-  const [count, setCount] = useState(0);
-
+  useEffect(()=>{
+    initFF();
+  },[])
   return (
     <div className="App" style={{ display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "row" }}>

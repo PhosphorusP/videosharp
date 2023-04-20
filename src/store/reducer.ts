@@ -1,10 +1,14 @@
 import { nanoid } from "nanoid";
 import { combineReducers } from "redux";
 const initialState = {
-    mediaFiles: [],
-    videoTrack: [],
-    subtitleTracks: [],
-    mapTracks: []
+  projectSize: [512, 512],
+  projectFPS: 30,
+  importing: false,
+  mediaFiles: [],
+  videoTrack: [],
+  subtitleTracks: [],
+  mapTracks: [],
+  currentFrame: 0,
 };
 const reducer = (state = initialState, action: any) => {
   switch (action.type) {
