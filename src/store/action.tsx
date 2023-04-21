@@ -2,6 +2,7 @@ import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import { FFprobeWorker } from "ffprobe-wasm";
 import { cloneDeep } from "lodash-es";
 import { nanoid } from "nanoid";
+import { Muxer, ArrayBufferTarget } from "mp4-muxer";
 import store from "./store";
 
 const probeWorker = new FFprobeWorker();
@@ -23,11 +24,28 @@ export const updateState = (assignments: any) => {
     assignments: assignments,
   });
 };
-const ffmpeg = createFFmpeg({ log: true });
+const ffmpeg = createFFmpeg({
+  log: true,
+  corePath: new URL("./ffmpeg-core/ffmpeg-core.js", document.location.href)
+    .href,
+});
 export const initFF = async () => {
+  store.dispatch({
+    type: "updateState",
+    assignments: {
+      appLoading: true,
+    },
+  });
   if (!ffmpeg.isLoaded()) await ffmpeg.load();
+  store.dispatch({
+    type: "updateState",
+    assignments: {
+      appLoading: false,
+    },
+  });
 };
 export const importFiles = async (files: FileList) => {
+  await initFF();
   let state = store.getState().reducer;
   let mediaFiles = new Array<MediaFile>();
   let videoTrack = new Array<VideoTrackItem>();
@@ -40,7 +58,6 @@ export const importFiles = async (files: FileList) => {
       let id = nanoid();
       // get thumbnail
       ffmpeg.FS("writeFile", `tmp_${id}`, await fetchFile(i));
-      console.error("transcode");
       await ffmpeg.run(
         "-i",
         `tmp_${id}`,
@@ -52,7 +69,6 @@ export const importFiles = async (files: FileList) => {
         "mp4",
         `${id}`
       );
-      console.error("----------------");
       await ffmpeg.run(
         "-ss",
         "0",
@@ -77,9 +93,8 @@ export const importFiles = async (files: FileList) => {
         ],
         id
       );
-      console.log(await probeWorker.getFrames(transcoded, 0));
       let duration = (await probeWorker.getFrames(transcoded, 0)).nb_frames;
-      ffmpeg.exit();
+
       // update
       mediaFiles.push({
         fileName: i.name,
@@ -106,12 +121,12 @@ export const importFiles = async (files: FileList) => {
       });
     }
   }
-  console.log(mediaFiles, videoTrack);
   updateState({
     mediaFiles: cloneDeep(state.mediaFiles).concat(mediaFiles),
     videoTrack: cloneDeep(state.videoTrack).concat(videoTrack),
     importing: false,
   });
+  ffmpeg.exit();
   return mediaFiles.length;
 };
 
@@ -121,19 +136,18 @@ export const setCurrentFrame = (frameNum: number) => {
   });
 };
 
-export const composeFrame = async (frameNum: number) => {
-  await initFF();
+export const composeFrame = async (
+  frameNum: number,
+  canvas: HTMLCanvasElement
+) => {
   let state = store.getState().reducer;
-  let canvas = document.getElementById("canvas") as HTMLCanvasElement; //document.createElement("canvas");
   let ctx = canvas.getContext("2d");
-  console.log(state);
   // compose videoTrack
-  {
+  if (state.videoTrack.length) {
     let mediaFiles = state.mediaFiles;
     let videoTrack = state.videoTrack as VideoTrackItem[];
     let curDuration = 0;
     let curVideoTrackItem = -1;
-    console.log("compose video");
     while (frameNum >= curDuration && curVideoTrackItem < videoTrack.length) {
       curDuration += videoTrack[++curVideoTrackItem].duration;
     }
@@ -143,31 +157,29 @@ export const composeFrame = async (frameNum: number) => {
       ) as MediaFile;
       let mediaFrame =
         frameNum - (curDuration - videoTrack[curVideoTrackItem].duration);
-      console.log("mediaFrame", mediaFrame);
       let videoHost = document.getElementById("video-host") as HTMLVideoElement;
+      let currentTime = (mediaFrame + 1) / state.projectFPS;
       await new Promise<void>((res) => {
         if (videoHost.src === mediaFile.objectURL) {
-          console.log("update", (mediaFrame + 1) / state.projectFPS);
-          videoHost.requestVideoFrameCallback(()=> {
-            console.log('video frame callback')
-            
-          ctx?.drawImage(videoHost, 0, 0);
-          })
-          videoHost.currentTime = (mediaFrame + 1) / state.projectFPS;
-          //videoHost.requestVideoFrameCallback(()=> {
-          
-          res();
-          //})
+          if (Math.abs(currentTime - videoHost.currentTime) < 1e-6) {
+            ctx?.drawImage(videoHost, 0, 0);
+            res();
+          } else {
+            videoHost.requestVideoFrameCallback(() => {
+              ctx?.drawImage(videoHost, 0, 0);
+              res();
+            });
+            videoHost.currentTime = currentTime;
+          }
         } else {
           let videoUpdateHandler = () => {
-            console.log("handler");
             ctx?.drawImage(videoHost, 0, 0);
-            videoHost.removeEventListener("canplaythrough", videoUpdateHandler);
+            videoHost.removeEventListener("canplay", videoUpdateHandler);
             res();
           };
-          videoHost.addEventListener("canplaythrough", videoUpdateHandler);
+          videoHost.addEventListener("canplay", videoUpdateHandler);
           videoHost.src = mediaFile.objectURL;
-          videoHost.currentTime = (mediaFrame + 1) / state.projectFPS;
+          videoHost.currentTime = currentTime;
         }
       });
     }
@@ -175,9 +187,12 @@ export const composeFrame = async (frameNum: number) => {
 };
 export const composeCurrentFrame = () => {
   let state = store.getState().reducer;
-  composeFrame(state.currentFrame);
+  composeFrame(
+    state.currentFrame,
+    document.getElementById("canvas") as HTMLCanvasElement
+  );
 };
-export const composeAll = async () => {
+export const exportVideo = async () => {
   let state = store.getState().reducer;
   const trackDuration = state.videoTrack.length
     ? state.videoTrack.reduce(
@@ -185,10 +200,40 @@ export const composeAll = async () => {
         0
       )
     : 0;
-  for (let i = 0; i <= trackDuration; i++) {
-    console.log(i);
-    await composeFrame(i);
+  let muxer = new Muxer({
+    target: new ArrayBufferTarget(),
+    video: {
+      codec: "avc",
+      width: state.projectSize[0],
+      height: state.projectSize[1],
+    },
+    firstTimestampBehavior: "offset",
+  });
+  let videoEncoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: (e) => undefined,
+  });
+  videoEncoder.configure({
+    codec: "avc1.42001f",
+    width: state.projectSize[0],
+    height: state.projectSize[1],
+    bitrate: 1e6,
+  });
+  let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+  for (let i = 0; i < trackDuration; i++) {
+    await composeFrame(i, canvas);
+    let frame = new VideoFrame(canvas, {
+      timestamp: (i * 1e6) / state.projectFPS,
+    });
+    videoEncoder.encode(frame, { keyFrame: i / state.projectFPS === 10 });
+    frame.close();
+
+    //await new Promise((res) => setTimeout(res, 500));
   }
-  alert("done!");
+  await videoEncoder.flush();
+  muxer.finalize();
+  let { buffer } = muxer.target;
+  let url = URL.createObjectURL(new Blob([buffer], { type: "video/mp4" }));
+  window.open(url);
 };
 export default { composeFrame };

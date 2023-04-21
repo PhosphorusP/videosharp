@@ -114,6 +114,26 @@ const Import: React.FC = () => {
           正在导入文件
         </div>
       </div>
+
+      <div
+        style={{
+          display: state.appLoading ? "flex" : "none",
+          zIndex: 1,
+          position: "fixed",
+          left: 0,
+          top: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: token.colorBgMask,
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div style={{ color: token.colorTextLightSolid, fontSize: "24px" }}>
+          正在加载FFMPEG
+        </div>
+      </div>
     </>
   );
 };

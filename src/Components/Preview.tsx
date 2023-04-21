@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { composeAll, composeCurrentFrame } from "../store/action";
+import { composeCurrentFrame, exportVideo } from "../store/action";
 
 const Preview: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
@@ -8,7 +8,6 @@ const Preview: React.FC = () => {
       Preview current:{state.currentFrame}
       <video
         id="video-host"
-        controls
         style={{
           display: "none",
           //maxWidth: '256px',
@@ -22,10 +21,14 @@ const Preview: React.FC = () => {
       />
       <div>
         <button onClick={() => composeCurrentFrame()}>compose</button>
-        <button onClick={() => composeAll()}>compose all</button>
+        <button onClick={() => exportVideo()}>export</button>
       </div>
       <div>
-        <canvas id="canvas" width={state.projectSize[0]} height={state.projectSize[1]} />
+        <canvas
+          id="canvas"
+          width={state.projectSize[0]}
+          height={state.projectSize[1]}
+        />
       </div>
     </>
   );

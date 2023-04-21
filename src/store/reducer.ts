@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import { combineReducers } from "redux";
 const initialState = {
+  appLoading: false,
   projectSize: [512, 512],
   projectFPS: 30,
   importing: false,
