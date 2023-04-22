@@ -8,6 +8,7 @@ import {
   getTrackStart,
   updateState,
 } from "../store/action";
+import { theme } from "antd";
 
 type VideoTrackClipProps = {
   videoTrackItem: VideoTrackItem;
@@ -19,6 +20,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
   const [mousePos, setMousePos] = useState([0, 0]);
   const [tmpVideoTrack, setTmpVideoTrack] = useState([] as VideoTrackItem[]);
   const handleWidth = 8;
+  const { token } = theme.useToken();
   const clipWidth =
     (videoTrackItem.duration -
       (videoTrackItem.beginOffset + (videoTrackItem.duration as number) ===
@@ -27,6 +29,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
         : 0)) *
     state.timelineRatio;
   const dragStartHandler = (e: React.MouseEvent, operation: string) => {
+    e.stopPropagation();
     setMousePos([e.clientX, e.clientY]);
     setTmpVideoTrack(state.videoTrack);
     updateState({
@@ -86,9 +89,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           ];
           if (
             currentClip.mediaOffset + offset[0] < 0 ||
-            offset[0] >
-              currentClip.duration -
-                handleWidth * 4 ||
+            offset[0] > currentClip.duration - handleWidth * 4 ||
             videoTrack.filter(
               (i) =>
                 i.beginOffset < currentClip.beginOffset &&
@@ -164,40 +165,43 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
   });
   return (
     <>
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: `${videoTrackItem.beginOffset * state.timelineRatio}px`,
-          height: "14px",
-          width: `${clipWidth}px`,
-          lineHeight: "14px",
-          fontSize: "12px",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-        }}
-      >
-        {
-          state.mediaFiles.find(
-            (i: MediaFile) => i.id === videoTrackItem.mediaFileId
-          ).fileName
-        }
-      </div>
+      {state.timelineCollapsed ? undefined : (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: `${videoTrackItem.beginOffset * state.timelineRatio}px`,
+            height: "14px",
+            width: `${clipWidth}px`,
+            lineHeight: "14px",
+            fontSize: "12px",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            color: token.colorTextSecondary,
+          }}
+        >
+          {
+            state.mediaFiles.find(
+              (i: MediaFile) => i.id === videoTrackItem.mediaFileId
+            ).fileName
+          }
+        </div>
+      )}
       <div
         key={videoTrackItem.id}
         style={{
           position: "absolute",
-          top: "14px",
+          top: state.timelineCollapsed ? 0 : "16px",
           left: `${videoTrackItem.beginOffset * state.timelineRatio}px`,
 
           display: "inline-block",
           boxSizing: "border-box",
           boxShadow:
             state.selectedId === videoTrackItem.id
-              ? "0 2px 0 #000 inset, 0 -2px 0 #000 inset"
+              ? `0 2px 0 ${token.colorBgSpotlight} inset, 0 -2px 0 ${token.colorBgSpotlight} inset`
               : undefined,
-          height: "56px",
+          height: state.timelineCollapsed ? "28px" : "56px",
           width: `${clipWidth}px`,
           backgroundImage: `url(${
             state.mediaFiles.find(
@@ -214,11 +218,11 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           fontSize: "12px",
         }}
         onMouseDown={(e) => {
+          e.stopPropagation();
           dragStartHandler(e, "move");
           updateState({
             selectedId: videoTrackItem.id,
           });
-          e.stopPropagation();
         }}
       ></div>
       {state.selectedId === videoTrackItem.id ? (
@@ -226,23 +230,26 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           <div
             style={{
               position: "absolute",
-              top: "14px",
+              top: state.timelineCollapsed ? 0 : "16px",
               left: `${videoTrackItem.beginOffset * state.timelineRatio}px`,
               width: `${handleWidth}px`,
               height: "56px",
-              backgroundColor: "#000",
+              backgroundColor: `${token.colorBgSpotlight}`,
               borderRadius: "8px 0 0 8px",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
             }}
           >
-            <EllipsisOutlined rotate={90} style={{ color: "#fff" }} />
+            <EllipsisOutlined
+              rotate={90}
+              style={{ color: token.colorTextLightSolid }}
+            />
           </div>
           <div
             style={{
               position: "absolute",
-              top: "14px",
+              top: state.timelineCollapsed ? 0 : "16px",
               left: `${
                 videoTrackItem.beginOffset * state.timelineRatio -
                 handleWidth / 2
@@ -256,7 +263,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           <div
             style={{
               position: "absolute",
-              top: "14px",
+              top: state.timelineCollapsed ? 0 : "16px",
               left: `${
                 videoTrackItem.beginOffset * state.timelineRatio +
                 clipWidth -
@@ -264,19 +271,22 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
               }px`,
               width: `${handleWidth}px`,
               height: "56px",
-              backgroundColor: "#000",
+              backgroundColor: `${token.colorBgSpotlight}`,
               borderRadius: "0 8px 8px 0",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
             }}
           >
-            <EllipsisOutlined rotate={90} style={{ color: "#fff" }} />
+            <EllipsisOutlined
+              rotate={90}
+              style={{ color: token.colorTextLightSolid }}
+            />
           </div>
           <div
             style={{
               position: "absolute",
-              top: "14px",
+              top: state.timelineCollapsed ? 0 : "16px",
               left: `${
                 videoTrackItem.beginOffset * state.timelineRatio +
                 clipWidth -

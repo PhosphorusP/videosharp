@@ -1,7 +1,7 @@
 import { combineReducers } from "redux";
 const initialState = {
   appLoading: false,
-  projectSize: [512, 512],
+  projectSize: [640, 360],
   projectFPS: 30,
   importing: false,
   mediaFiles: [],
@@ -10,6 +10,7 @@ const initialState = {
   mapTracks: [],
   currentFrame: 0,
   timelineRatio: 2,
+  timelineCollapsed: false,
   selectedId: "",
   dragOrigin: "",
 };

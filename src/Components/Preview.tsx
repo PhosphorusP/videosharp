@@ -6,6 +6,7 @@ import {
   updateState,
 } from "../store/action";
 import { cloneDeep } from "lodash-es";
+import { Button } from "antd";
 
 const Preview: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
@@ -24,11 +25,11 @@ const Preview: React.FC = () => {
           zIndex: "-1000",
         }}
       />
-      {undefined && (
-        <div>
-          <button onClick={() => exportVideo()}>export</button>
-        </div>
-      )}
+      <div>
+        <Button type="primary" onClick={() => exportVideo()}>
+          导出视频
+        </Button>
+      </div>
       <div
         style={{
           flex: 1,
@@ -36,6 +37,7 @@ const Preview: React.FC = () => {
           justifyContent: "center",
           alignItems: "center",
           overflow: "hidden",
+          padding: '8px'
         }}
       >
         <canvas
