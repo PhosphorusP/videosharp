@@ -1,5 +1,6 @@
 import { useSelector } from "react-redux";
-import { composeCurrentFrame, exportVideo } from "../store/action";
+import { composeCurrentFrame, exportVideo, updateState } from "../store/action";
+import { cloneDeep } from "lodash-es";
 
 const Preview: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
@@ -22,6 +23,19 @@ const Preview: React.FC = () => {
       <div>
         <button onClick={() => composeCurrentFrame()}>compose</button>
         <button onClick={() => exportVideo()}>export</button>
+        <button
+          onClick={() => {
+            let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
+            videoTrack[1].beginOffset += 30;
+            videoTrack[1].duration -= 30;
+            videoTrack[1].mediaOffset += 30;
+            updateState({
+              videoTrack: videoTrack,
+            });
+          }}
+        >
+          Cut Clip 2
+        </button>
       </div>
       <div>
         <canvas

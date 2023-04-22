@@ -1,4 +1,3 @@
-import { nanoid } from "nanoid";
 import { combineReducers } from "redux";
 const initialState = {
   appLoading: false,
@@ -10,6 +9,7 @@ const initialState = {
   subtitleTracks: [],
   mapTracks: [],
   currentFrame: 0,
+  timelineRatio: 1
 };
 const reducer = (state = initialState, action: any) => {
   switch (action.type) {

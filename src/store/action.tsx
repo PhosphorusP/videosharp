@@ -44,15 +44,19 @@ export const initFF = async () => {
     },
   });
 };
+export const getTrackDuration = (track: VideoTrackItem[]) =>
+  track.reduce((a: number, b) => {
+    let endB = b.beginOffset + b.duration;
+    return a > endB ? a : endB;
+  }, 0);
 export const importFiles = async (files: FileList) => {
   await initFF();
   let state = store.getState().reducer;
   let mediaFiles = new Array<MediaFile>();
-  let videoTrack = new Array<VideoTrackItem>();
+  let videoTrack = cloneDeep(state.videoTrack);
   updateState({
     importing: true,
   });
-  //await initFF();
   for (let i of files) {
     if (["video/mp4"].indexOf(i.type) >= 0) {
       let id = nanoid();
@@ -101,13 +105,16 @@ export const importFiles = async (files: FileList) => {
         id: id,
         type: "video",
         objectURL: URL.createObjectURL(transcoded),
+        file: transcoded,
         thumbnailDataUrl: thumbnailDataUrl,
         duration: duration,
       });
+      let beginOffset = getTrackDuration(videoTrack);
       videoTrack.push({
         id: nanoid(),
         mediaFileId: id,
-        beginOffset: 0,
+        mediaOffset: 0,
+        beginOffset: beginOffset,
         duration: duration,
       });
     } else if (["image/jpeg", "image/png"].indexOf(i.type) >= 0) {
@@ -116,6 +123,7 @@ export const importFiles = async (files: FileList) => {
         id: nanoid(),
         type: "map",
         objectURL: URL.createObjectURL(i),
+        file: i,
         thumbnailDataUrl: await readFileAsBase64(i),
         duration: 0,
       });
@@ -123,7 +131,7 @@ export const importFiles = async (files: FileList) => {
   }
   updateState({
     mediaFiles: cloneDeep(state.mediaFiles).concat(mediaFiles),
-    videoTrack: cloneDeep(state.videoTrack).concat(videoTrack),
+    videoTrack: videoTrack,
     importing: false,
   });
   ffmpeg.exit();
@@ -141,22 +149,21 @@ export const composeFrame = async (
   canvas: HTMLCanvasElement
 ) => {
   let state = store.getState().reducer;
-  let ctx = canvas.getContext("2d");
+  let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
   // compose videoTrack
-  if (state.videoTrack.length) {
-    let mediaFiles = state.mediaFiles;
+  {
     let videoTrack = state.videoTrack as VideoTrackItem[];
-    let curDuration = 0;
-    let curVideoTrackItem = -1;
-    while (frameNum >= curDuration && curVideoTrackItem < videoTrack.length) {
-      curDuration += videoTrack[++curVideoTrackItem].duration;
-    }
-    if (frameNum <= curDuration) {
+    let mediaFiles = state.mediaFiles as MediaFile[];
+    let vid = videoTrack.find(
+      (i) =>
+        frameNum >= i.beginOffset && frameNum <= i.beginOffset + i.duration - 1
+    );
+    if (vid) {
       let mediaFile = mediaFiles.find(
-        (i: MediaFile) => i.id === videoTrack[curVideoTrackItem].mediaFileId
+        (i: MediaFile) => i.id === vid!.mediaFileId
       ) as MediaFile;
-      let mediaFrame =
-        frameNum - (curDuration - videoTrack[curVideoTrackItem].duration);
+      let mediaFrame = frameNum - vid.beginOffset + vid.mediaOffset;
       let videoHost = document.getElementById("video-host") as HTMLVideoElement;
       let currentTime = (mediaFrame + 1) / state.projectFPS;
       await new Promise<void>((res) => {
@@ -182,6 +189,9 @@ export const composeFrame = async (
           videoHost.currentTime = currentTime;
         }
       });
+    } else {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, state.projectSize[0], state.projectSize[1]);
     }
   }
 };
@@ -193,13 +203,9 @@ export const composeCurrentFrame = () => {
   );
 };
 export const exportVideo = async () => {
+  await initFF();
   let state = store.getState().reducer;
-  const trackDuration = state.videoTrack.length
-    ? state.videoTrack.reduce(
-        (prev: number, cur: VideoTrackItem) => prev + cur.duration,
-        0
-      )
-    : 0;
+  const trackDuration = getTrackDuration(state.videoTrack);
   let muxer = new Muxer({
     target: new ArrayBufferTarget(),
     video: {
@@ -227,13 +233,99 @@ export const exportVideo = async () => {
     });
     videoEncoder.encode(frame, { keyFrame: i / state.projectFPS === 10 });
     frame.close();
-
-    //await new Promise((res) => setTimeout(res, 500));
   }
   await videoEncoder.flush();
   muxer.finalize();
   let { buffer } = muxer.target;
-  let url = URL.createObjectURL(new Blob([buffer], { type: "video/mp4" }));
+  let composed = new Blob([buffer], { type: "video/mp4" });
+  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
+  let mediaFiles = state.mediaFiles as MediaFile[];
+  let fps = state.projectFPS;
+  for (let i of mediaFiles)
+    ffmpeg.FS("writeFile", i.id, await fetchFile(i.file));
+  videoTrack.sort((a, b) => a.beginOffset - b.beginOffset);
+  let audioTrackArr = [];
+  for (let i = 0; i < videoTrack.length; i++) {
+    // insert silent between videos
+    if (
+      i > 0 &&
+      videoTrack[i].beginOffset >
+        videoTrack[i - 1].beginOffset + videoTrack[i - 1].duration
+    ) {
+      let silId = nanoid();
+      let silDuration =
+        (videoTrack[i].beginOffset -
+          (videoTrack[i - 1].beginOffset + videoTrack[i - 1].duration)) /
+        fps;
+      await ffmpeg.run(
+        "-f",
+        "lavfi",
+        "-i",
+        `color=size=${state.projectSize[0]}x${state.projectSize[1]}:rate=${fps}:color=black`,
+        "-f",
+        "lavfi",
+        "-i",
+        "anullsrc=channel_layout=stereo:sample_rate=44100",
+        "-t",
+        `${silDuration}`,
+        "-f",
+        "mp4",
+        `${silId}`
+      );
+      audioTrackArr.push({
+        sil: false,
+        fileName: silId,
+      } as AudioTrackItem);
+    }
+    // cut video
+    await ffmpeg.run(
+      "-i",
+      `${videoTrack[i].mediaFileId}`,
+      "-ss",
+      `${(videoTrack[i].mediaOffset / fps).toFixed(3)}`,
+      "-t",
+      `${(videoTrack[i].duration / fps).toFixed(3)}`,
+      "-f",
+      "mp4",
+      `${videoTrack[i].id}`
+    );
+    audioTrackArr.push({
+      sil: false,
+      fileName: videoTrack[i].id,
+    } as AudioTrackItem);
+  }
+  //generate audio
+  let fileList = audioTrackArr.map((i) => `file ${i.fileName}`).join("\n");
+  ffmpeg.FS("writeFile", "concat_list.txt", fileList);
+  await ffmpeg.run(
+    "-f",
+    "concat",
+    "-safe",
+    "0",
+    "-i",
+    "concat_list.txt",
+    "generated.mp3"
+  );
+  let generated = new Blob([ffmpeg.FS("readFile", "generated.mp3")], {
+    type: "audio/mpeg",
+  });
+  ffmpeg.FS("writeFile", "composed.mp4", await fetchFile(composed));
+  await ffmpeg.run(
+    "-i",
+    "composed.mp4",
+    "-i",
+    "generated.mp3",
+    "-c:v",
+    "copy",
+    "-c:a",
+    "aac",
+    "output.mp4"
+  );
+  let output = new Blob([ffmpeg.FS("readFile", "output.mp4")], {
+    type: "video/mp4",
+  });
+  let url = URL.createObjectURL(output);
   window.open(url);
+  ffmpeg.exit();
 };
 export default { composeFrame };
