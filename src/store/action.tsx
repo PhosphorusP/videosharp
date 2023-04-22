@@ -1,8 +1,8 @@
 import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import { FFprobeWorker } from "ffprobe-wasm";
 import { cloneDeep } from "lodash-es";
+import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 import { nanoid } from "nanoid";
-import { Muxer, ArrayBufferTarget } from "mp4-muxer";
 import store from "./store";
 
 const probeWorker = new FFprobeWorker();
@@ -17,6 +17,11 @@ const readFileAsBase64 = async (file: Blob) => {
     reader.readAsDataURL(file);
   });
 };
+
+export const formatTimestamp = (frame: number, fps: number) =>
+  `${("0" + Math.floor(frame / fps / 60).toString()).slice(-2)}:${(
+    "0" + Math.floor((frame / fps) % 60).toString()
+  ).slice(-2)}:${("0" + (frame % fps).toString()).slice(-2)}`;
 
 export const updateState = (assignments: any) => {
   store.dispatch({
@@ -121,7 +126,7 @@ export const importFiles = async (files: FileList) => {
         mediaOffset: 0,
         beginOffset: beginOffset,
         duration: duration,
-      });
+      } as VideoTrackItem);
     } else if (["image/jpeg", "image/png"].indexOf(i.type) >= 0) {
       mediaFiles.push({
         fileName: i.name,
@@ -141,6 +146,18 @@ export const importFiles = async (files: FileList) => {
   });
   ffmpeg.exit();
   return mediaFiles.length;
+};
+
+export const deleteClip = (id: string) => {
+  let state = store.getState().reducer;
+  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
+  videoTrack.splice(
+    videoTrack.findIndex((i) => i.id === id),
+    1
+  );
+  updateState({
+    videoTrack: videoTrack,
+  });
 };
 
 export const alignTracks = () => {

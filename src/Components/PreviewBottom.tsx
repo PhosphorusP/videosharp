@@ -1,7 +1,11 @@
 import { VerticalAlignMiddleOutlined } from "@ant-design/icons";
 import { Button, Tooltip, theme } from "antd";
 import { useSelector } from "react-redux";
-import { getTrackDuration, updateState } from "../store/action";
+import {
+  formatTimestamp,
+  getTrackDuration,
+  updateState,
+} from "../store/action";
 
 const PreviewBottom: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
@@ -10,17 +14,7 @@ const PreviewBottom: React.FC = () => {
     <>
       <div style={{ flex: 1 }}>
         <span style={{ color: token.colorText, fontWeight: "bold" }}>
-          {(
-            "0" +
-            Math.floor(state.currentFrame / state.projectFPS / 60).toString()
-          ).slice(-2)}
-          :
-          {(
-            "0" +
-            Math.floor((state.currentFrame / state.projectFPS) % 60).toString()
-          ).slice(-2)}
-          :
-          {("0" + (state.currentFrame % state.projectFPS).toString()).slice(-2)}
+          {formatTimestamp(state.currentFrame, state.projectFPS)}
         </span>
       </div>
       <div>

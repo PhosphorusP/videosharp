@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^5.0.1",
+    "@dnd-kit/core": "^6.0.8",
     "@ffmpeg/core": "^0.11.0",
     "@ffmpeg/ffmpeg": "^0.11.6",
     "@testing-library/jest-dom": "^5.16.5",
@@ -22,8 +23,10 @@
     "mp4-muxer": "^2.0.0",
     "nanoid": "^4.0.2",
     "react": "^18.2.0",
+    "react-contexify": "^6.0.0",
     "react-dom": "^18.2.0",
     "react-redux": "^8.0.5",
+    "react-responsive": "^9.0.2",
     "react-scripts": "5.0.1",
     "react-use": "^17.4.0",
     "redux": "^4.2.1",

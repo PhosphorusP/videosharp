@@ -16,7 +16,6 @@ const Preview: React.FC = () => {
         id="video-host"
         style={{
           display: "none",
-          //maxWidth: '256px',
           boxShadow: "0 0 8px red",
           position: "fixed",
           top: "0",
@@ -25,7 +24,7 @@ const Preview: React.FC = () => {
           zIndex: "-1000",
         }}
       />
-      <div>
+      <div style={{padding: '8px'}}>
         <Button type="primary" onClick={() => exportVideo()}>
           导出视频
         </Button>

@@ -8,6 +8,7 @@ import {
 } from "../store/action";
 import { theme } from "antd";
 import VideoTrackClip from "./VideoTrackClip";
+import { useDroppable } from "@dnd-kit/core";
 
 const Timeline: React.FC = () => {
   const padding = 2;
@@ -16,7 +17,7 @@ const Timeline: React.FC = () => {
   const rulerRef = useRef(null);
   const trackDuration = getTrackDuration(state.videoTrack);
   const timelineDragHandler: any = (e: React.MouseEvent) => {
-    if (state.dragOrigin === "timeline") {
+    if (state.clipOrigin === "timeline") {
       let offsetX =
         Math.round(
           e.clientX -
@@ -28,9 +29,9 @@ const Timeline: React.FC = () => {
     }
   };
   const timelineDragEndHandler: any = () => {
-    if (state.dragOrigin === "timeline")
+    if (state.clipOrigin === "timeline")
       updateState({
-        dragOrigin: "",
+        clipOrigin: "",
       });
   };
   useEffect(() => {
@@ -40,6 +41,12 @@ const Timeline: React.FC = () => {
       document.removeEventListener("mousemove", timelineDragHandler);
       document.removeEventListener("mouseup", timelineDragEndHandler);
     };
+  });
+  const { isOver, setNodeRef } = useDroppable({
+    id: "track_video",
+    data: {
+      accepts: ["video"],
+    },
   });
   if (trackDuration) composeCurrentFrame();
   return (
@@ -68,7 +75,7 @@ const Timeline: React.FC = () => {
           borderLeft: `1px solid ${token.colorBorderSecondary}`,
           borderRight: `1px solid ${token.colorBorderSecondary}`,
           borderBottom: `1px solid ${token.colorBorderSecondary}`,
-          borderRadius: "0 0 2px 2px",
+          borderRadius: "0 0 4px 4px",
           marginBottom: "4px",
           position: "relative",
           overflow: "hidden",
@@ -76,7 +83,7 @@ const Timeline: React.FC = () => {
         onMouseDown={(e) => {
           e.stopPropagation();
           updateState({
-            dragOrigin: "timeline",
+            clipOrigin: "timeline",
           });
         }}
       >
@@ -128,6 +135,17 @@ const Timeline: React.FC = () => {
           height: state.timelineCollapsed ? `${28}px` : `${56 + 16}px`,
         }}
       >
+        <div
+          ref={setNodeRef}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: isOver ? token.colorPrimaryBgHover : undefined,
+          }}
+        />
         {state.videoTrack.map((videoTrackItem: VideoTrackItem) => (
           <VideoTrackClip
             key={videoTrackItem.id}
@@ -154,8 +172,6 @@ const Timeline: React.FC = () => {
             borderLeft: `${8 / Math.sqrt(3)}px solid transparent`,
             borderRight: `${8 / Math.sqrt(3)}px solid transparent`,
             borderTop: `${8}px solid ${token.colorPrimary}`,
-            //border: "8px solid",
-            //borderColor: `red transparent transparent transparent`,
             filter: `drop-shadow(0 0 8px ${token.colorPrimary})`,
             transform: "translateX(-4px)",
           }}

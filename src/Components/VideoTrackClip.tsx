@@ -1,14 +1,17 @@
 import { EllipsisOutlined } from "@ant-design/icons";
+import { theme } from "antd";
 import { cloneDeep } from "lodash-es";
 import { useEffect, useState } from "react";
+import { Item, Menu, useContextMenu } from "react-contexify";
+import "react-contexify/dist/ReactContexify.css";
 import { useSelector } from "react-redux";
 import {
   alignTracks,
+  deleteClip,
   getTrackDuration,
   getTrackStart,
   updateState,
 } from "../store/action";
-import { theme } from "antd";
 
 type VideoTrackClipProps = {
   videoTrackItem: VideoTrackItem;
@@ -33,12 +36,15 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
     setMousePos([e.clientX, e.clientY]);
     setTmpVideoTrack(state.videoTrack);
     updateState({
-      dragOrigin: `${videoTrackItem.id}_${operation}`,
+      clipOrigin: `${videoTrackItem.id}_${operation}`,
     });
   };
+  const showContextMenu = useContextMenu({
+    id: videoTrackItem.id,
+  }).show;
   useEffect(() => {
     let mouseMoveHandler: any = (e: React.MouseEvent) => {
-      if (state.dragOrigin === `${videoTrackItem.id}_move`) {
+      if (state.clipOrigin === `${videoTrackItem.id}_move`) {
         e.stopPropagation();
         if (e.buttons) {
           let videoTrack = cloneDeep(tmpVideoTrack);
@@ -76,7 +82,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
             videoTrack: videoTrack,
           });
         }
-      } else if (state.dragOrigin === `${videoTrackItem.id}_clip_l`) {
+      } else if (state.clipOrigin === `${videoTrackItem.id}_clip_l`) {
         e.stopPropagation();
         if (e.buttons) {
           let videoTrack = cloneDeep(tmpVideoTrack);
@@ -105,7 +111,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
             videoTrack: videoTrack,
           });
         }
-      } else if (state.dragOrigin === `${videoTrackItem.id}_clip_r`) {
+      } else if (state.clipOrigin === `${videoTrackItem.id}_clip_r`) {
         e.stopPropagation();
         if (e.buttons) {
           let videoTrack = cloneDeep(tmpVideoTrack);
@@ -149,11 +155,11 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           `${videoTrackItem.id}_move`,
           `${videoTrackItem.id}_clip_l`,
           `${videoTrackItem.id}_clip_r`,
-        ].indexOf(state.dragOrigin) >= 0
+        ].indexOf(state.clipOrigin) >= 0
       ) {
         alignTracks();
         updateState({
-          dragOrigin: "",
+          clipOrigin: "",
         });
       }
     };
@@ -163,6 +169,8 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
       document.removeEventListener("mouseup", mouseUpHandler);
     };
   });
+  const handleColor = token.colorBgBase;
+  const handleInnerColor = token.colorTextHeading;
   return (
     <>
       {state.timelineCollapsed ? undefined : (
@@ -198,8 +206,8 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           display: "inline-block",
           boxSizing: "border-box",
           boxShadow:
-            state.selectedId === videoTrackItem.id
-              ? `0 2px 0 ${token.colorBgSpotlight} inset, 0 -2px 0 ${token.colorBgSpotlight} inset`
+            state.selectedId === videoTrackItem.id && !state.timelineCollapsed
+              ? `0 4px 0 ${handleColor} inset, 0 -4px 0 ${handleColor} inset`
               : undefined,
           height: state.timelineCollapsed ? "28px" : "56px",
           width: `${clipWidth}px`,
@@ -215,7 +223,6 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
-          fontSize: "12px",
         }}
         onMouseDown={(e) => {
           e.stopPropagation();
@@ -224,27 +231,40 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
             selectedId: videoTrackItem.id,
           });
         }}
+        onContextMenu={(e) => showContextMenu({ event: e })}
       ></div>
       {state.selectedId === videoTrackItem.id ? (
         <>
+          <div
+            style={{
+              pointerEvents: "none",
+              position: "absolute",
+              top: state.timelineCollapsed ? 0 : "16px",
+              left: `${videoTrackItem.beginOffset * state.timelineRatio}px`,
+              display: "inline-block",
+              boxSizing: "border-box",
+              outline: `2px solid ${token.colorPrimary}`,
+              height: state.timelineCollapsed ? "28px" : "56px",
+              width: `${clipWidth}px`,
+              borderRadius: "8px",
+              zIndex: 1,
+            }}
+          ></div>
           <div
             style={{
               position: "absolute",
               top: state.timelineCollapsed ? 0 : "16px",
               left: `${videoTrackItem.beginOffset * state.timelineRatio}px`,
               width: `${handleWidth}px`,
-              height: "56px",
-              backgroundColor: `${token.colorBgSpotlight}`,
+              height: state.timelineCollapsed ? "28px" : "56px",
+              backgroundColor: `${handleColor}`,
               borderRadius: "8px 0 0 8px",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
             }}
           >
-            <EllipsisOutlined
-              rotate={90}
-              style={{ color: token.colorTextLightSolid }}
-            />
+            <EllipsisOutlined rotate={90} style={{ color: handleInnerColor }} />
           </div>
           <div
             style={{
@@ -255,7 +275,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
                 handleWidth / 2
               }px`,
               width: `${handleWidth * 2}px`,
-              height: "56px",
+              height: state.timelineCollapsed ? "28px" : "56px",
               cursor: "ew-resize",
             }}
             onMouseDown={(e) => dragStartHandler(e, "clip_l")}
@@ -270,18 +290,15 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
                 handleWidth
               }px`,
               width: `${handleWidth}px`,
-              height: "56px",
-              backgroundColor: `${token.colorBgSpotlight}`,
+              height: state.timelineCollapsed ? "28px" : "56px",
+              backgroundColor: `${handleColor}`,
               borderRadius: "0 8px 8px 0",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
             }}
           >
-            <EllipsisOutlined
-              rotate={90}
-              style={{ color: token.colorTextLightSolid }}
-            />
+            <EllipsisOutlined rotate={90} style={{ color: handleInnerColor }} />
           </div>
           <div
             style={{
@@ -294,13 +311,16 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
                 handleWidth / 2
               }px`,
               width: `${handleWidth * 2}px`,
-              height: "56px",
+              height: state.timelineCollapsed ? "28px" : "56px",
               cursor: "ew-resize",
             }}
             onMouseDown={(e) => dragStartHandler(e, "clip_r")}
           />
         </>
       ) : undefined}
+      <Menu id={videoTrackItem.id} theme={state.darkMode ? "dark" : "light"}>
+        <Item onClick={() => deleteClip(videoTrackItem.id)}>删除</Item>
+      </Menu>
     </>
   );
 };

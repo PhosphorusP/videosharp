@@ -11,13 +11,16 @@ const PanelHeader: React.FC<PanelHeaderProps> = ({
 }: PanelHeaderProps) => (
   <Tabs
     activeKey="null"
-    size="small"
+    size="middle"
     items={[
       {
         key: "a",
         label: (
           <>
+            <div style={{ width: "8px", display: 'inline-block' }} />
             {icon}
+
+            <div style={{ width: "0px", marginLeft: '-4px', display: 'inline-block' }} />
             {label}
           </>
         ),

@@ -1,25 +1,18 @@
 import { useSelector } from "react-redux";
+import MediaFileItem from "./MediaFileItem";
 
 const MediaFiles: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
   return (
     <>
-      <div>MediaFiles</div>
       {state.mediaFiles.map((mediaFile: MediaFile) => (
-        <div
+        <MediaFileItem
           key={mediaFile.id}
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
-          <img
-            src={mediaFile.thumbnailDataUrl}
-            style={{ maxWidth: "72px", maxHeight: "72px" }}
-          />
-          <span>{mediaFile.fileName}</span>
-        </div>
+          id={mediaFile.id}
+          type={mediaFile.type}
+          fileName={mediaFile.fileName}
+          thumbnailDataUrl={mediaFile.thumbnailDataUrl}
+        />
       ))}
     </>
   );
