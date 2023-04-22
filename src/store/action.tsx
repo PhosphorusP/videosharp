@@ -162,9 +162,33 @@ export const deleteClip = (id: string) => {
 
 export const alignTracks = () => {
   let state = store.getState().reducer;
-  let videoTrack = cloneDeep(state.videoTrack);
+  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
   let start = getTrackStart(videoTrack);
   for (let i of videoTrack) i.beginOffset -= start;
+  updateState({
+    videoTrack: videoTrack,
+  });
+};
+
+export const cutAtCursor = () => {
+  let state = store.getState().reducer;
+  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
+  let currentFrame = state.currentFrame as number;
+  let clip = videoTrack.find(
+    (i) =>
+      currentFrame >= i.beginOffset &&
+      currentFrame <= i.beginOffset + i.duration - 1
+  );
+  if (clip) {
+    videoTrack.push({
+      id: nanoid(),
+      mediaFileId: clip.mediaFileId,
+      mediaOffset: currentFrame - clip.beginOffset + clip.mediaOffset,
+      beginOffset: currentFrame,
+      duration: clip.duration - (currentFrame - clip.beginOffset),
+    } as VideoTrackItem);
+    clip.duration = currentFrame - clip.beginOffset;
+  }
   updateState({
     videoTrack: videoTrack,
   });

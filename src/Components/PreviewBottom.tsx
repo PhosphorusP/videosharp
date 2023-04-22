@@ -1,7 +1,11 @@
-import { VerticalAlignMiddleOutlined } from "@ant-design/icons";
+import {
+  ScissorOutlined,
+  VerticalAlignMiddleOutlined,
+} from "@ant-design/icons";
 import { Button, Tooltip, theme } from "antd";
 import { useSelector } from "react-redux";
 import {
+  cutAtCursor,
   formatTimestamp,
   getTrackDuration,
   updateState,
@@ -18,6 +22,17 @@ const PreviewBottom: React.FC = () => {
         </span>
       </div>
       <div>
+        <Tooltip
+          title="在播放头处拆分"
+          children={
+            <Button
+              type="text"
+              size="small"
+              icon={<ScissorOutlined rotate={90} />}
+              onClick={() => cutAtCursor()}
+            />
+          }
+        />
         <Tooltip
           title={`时间轴水平缩放 (${
             state.timelineRatio === 1 ? "关闭" : "打开"

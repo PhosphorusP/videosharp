@@ -60,7 +60,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
               .filter((i) => i.id !== currentClip.id)
               .filter(
                 (i) =>
-                  i.beginOffset < currentClip.beginOffset &&
+                  i.beginOffset < currentClip.beginOffset+ offset[0] &&
                   i.beginOffset + i.duration - 1 >=
                     currentClip.beginOffset + offset[0]
               ).length

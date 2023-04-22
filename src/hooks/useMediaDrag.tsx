@@ -18,9 +18,7 @@ export function useMediaDrag() {
       over &&
       over.data.current!.accepts.includes(active.data.current!.type)
     ) {
-      console.error("dropped!");
       if (over.id === "track_video") {
-        console.log("video!");
         let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
         let mediaFiles = cloneDeep(state.mediaFiles) as MediaFile[];
         videoTrack.push({
