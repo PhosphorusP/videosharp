@@ -9,7 +9,7 @@ import {
 import VideoTrackClip from "./VideoTrackClip";
 
 const Timeline: React.FC = () => {
-  const padding = 16;
+  const padding = 2;
   const state: any = useSelector((state: any) => state.reducer);
   const rulerRef = useRef(null);
   const trackDuration = getTrackDuration(state.videoTrack);
@@ -17,14 +17,15 @@ const Timeline: React.FC = () => {
     if (state.dragOrigin === "timeline") {
       let offsetX =
         Math.round(
-          e.clientX - (rulerRef.current as unknown as HTMLElement).offsetLeft
+          e.clientX -
+            (rulerRef.current as unknown as HTMLElement).getBoundingClientRect()
+              .x
         ) / state.timelineRatio;
       if (e.buttons && offsetX <= trackDuration - 1 && offsetX >= 0)
         setCurrentFrame(Math.round(offsetX));
     }
   };
   const timelineDragEndHandler: any = () => {
-    console.log("mouseup");
     if (state.dragOrigin === "timeline")
       updateState({
         dragOrigin: "",
@@ -48,6 +49,7 @@ const Timeline: React.FC = () => {
         flexDirection: "column",
         paddingLeft: `${padding}px`,
         paddingRight: `${padding}px`,
+        position: "relative",
       }}
     >
       <div
@@ -60,14 +62,20 @@ const Timeline: React.FC = () => {
           backgroundColor: "red",
           borderRadius: "4px",
         }}
-        onMouseDown={() =>
+        onMouseDown={(e) => {
+          e.stopPropagation();
           updateState({
             dragOrigin: "timeline",
-          })
-        }
-        //onMouseMove={timelineDragHandler}
+          });
+        }}
       />
-      <div style={{ whiteSpace: "nowrap", position: "relative" }}>
+      <div
+        style={{
+          whiteSpace: "nowrap",
+          position: "relative",
+          height: `${56 + 16}px`,
+        }}
+      >
         {state.videoTrack.map((videoTrackItem: VideoTrackItem) => (
           <VideoTrackClip
             key={videoTrackItem.id}

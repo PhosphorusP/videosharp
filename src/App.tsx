@@ -13,15 +13,15 @@ function App() {
   }, []);
   return (
     <div className="App" style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "row" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "row", overflow:'hidden' }}>
         <div style={{ flex: 1 }}>
           <Import />
           <MediaFiles />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
           <Preview />
         </div>
-        {0 && (
+        {true && (
           <div style={{ flex: 1 }}>
             <Properties />
           </div>
@@ -29,7 +29,6 @@ function App() {
       </div>
       <div
         style={{
-          flex: 1,
           display: "flex",
           flexDirection: "column",
           position: "relative",

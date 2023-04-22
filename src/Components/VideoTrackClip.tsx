@@ -195,7 +195,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           boxSizing: "border-box",
           boxShadow:
             state.selectedId === videoTrackItem.id
-              ? "0 1px 0 #000 inset, 0 -1px 0 #000 inset"
+              ? "0 2px 0 #000 inset, 0 -2px 0 #000 inset"
               : undefined,
           height: "56px",
           width: `${clipWidth}px`,
@@ -207,8 +207,6 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           backgroundRepeat: "repeat-x",
           backgroundSize: "auto 100%",
           backgroundPosition: "left center",
-          color: "#FFF",
-          textShadow: "0 2px 4px #000",
           borderRadius: "8px",
           overflow: "hidden",
           textOverflow: "ellipsis",
