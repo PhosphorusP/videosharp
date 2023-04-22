@@ -9,7 +9,9 @@ const initialState = {
   subtitleTracks: [],
   mapTracks: [],
   currentFrame: 0,
-  timelineRatio: 1
+  timelineRatio: 2,
+  selectedId: "",
+  dragOrigin: "",
 };
 const reducer = (state = initialState, action: any) => {
   switch (action.type) {

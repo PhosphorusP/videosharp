@@ -1,5 +1,10 @@
 import { useSelector } from "react-redux";
-import { composeCurrentFrame, exportVideo, updateState } from "../store/action";
+import {
+  composeCurrentFrame,
+  exportVideo,
+  getTrackStart,
+  updateState,
+} from "../store/action";
 import { cloneDeep } from "lodash-es";
 
 const Preview: React.FC = () => {
@@ -35,6 +40,18 @@ const Preview: React.FC = () => {
           }}
         >
           Cut Clip 2
+        </button>
+        <button
+          onClick={() => {
+            let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
+            let offset = getTrackStart(videoTrack);
+            for (let i of videoTrack) i.beginOffset -= offset;
+            updateState({
+              videoTrack: videoTrack,
+            });
+          }}
+        >
+          Align to Start
         </button>
       </div>
       <div>

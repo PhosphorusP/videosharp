@@ -49,6 +49,11 @@ export const getTrackDuration = (track: VideoTrackItem[]) =>
     let endB = b.beginOffset + b.duration;
     return a > endB ? a : endB;
   }, 0);
+export const getTrackStart = (track: VideoTrackItem[]) =>
+  track.reduce((a: number, b) => {
+    let endB = b.beginOffset;
+    return a < endB ? a : endB;
+  }, track[0].beginOffset);
 export const importFiles = async (files: FileList) => {
   await initFF();
   let state = store.getState().reducer;
@@ -136,6 +141,16 @@ export const importFiles = async (files: FileList) => {
   });
   ffmpeg.exit();
   return mediaFiles.length;
+};
+
+export const alignTracks = () => {
+  let state = store.getState().reducer;
+  let videoTrack = cloneDeep(state.videoTrack);
+  let start = getTrackStart(videoTrack);
+  for (let i of videoTrack) i.beginOffset -= start;
+  updateState({
+    videoTrack: videoTrack,
+  });
 };
 
 export const setCurrentFrame = (frameNum: number) => {
@@ -306,9 +321,6 @@ export const exportVideo = async () => {
     "concat_list.txt",
     "generated.mp3"
   );
-  let generated = new Blob([ffmpeg.FS("readFile", "generated.mp3")], {
-    type: "audio/mpeg",
-  });
   ffmpeg.FS("writeFile", "composed.mp4", await fetchFile(composed));
   await ffmpeg.run(
     "-i",
@@ -328,4 +340,3 @@ export const exportVideo = async () => {
   window.open(url);
   ffmpeg.exit();
 };
-export default { composeFrame };

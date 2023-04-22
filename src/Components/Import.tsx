@@ -1,13 +1,13 @@
-import { App, theme } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
+import { App, theme } from "antd";
 import { useEffect, useState } from "react";
-import { importFiles } from "../store/action";
 import { useSelector } from "react-redux";
+import { importFiles } from "../store/action";
 
 const Import: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
   const { token } = theme.useToken();
-  const { message, modal } = App.useApp();
+  const { message } = App.useApp();
   const [mask, setMask] = useState(false);
   useEffect(() => {
     const defaultHandler: EventListener = (e: Event) => e.preventDefault();
@@ -46,16 +46,6 @@ const Import: React.FC = () => {
       e.stopPropagation();
     };
     document.addEventListener("drop", dropHandler);
-    // handle document paste
-    const pasteHandler: any = async (e: ClipboardEvent) => {
-      let fileCnt = e.clipboardData
-        ? await importFiles(e.clipboardData.files)
-        : 0;
-      if (fileCnt) message.success(`已导入${fileCnt}个文件`);
-      else message.error("剪贴板中没有可供导入的文件");
-      e.preventDefault();
-      e.stopPropagation();
-    };
 
     return () => {
       document.removeEventListener("dragleave", defaultHandler);
@@ -66,7 +56,7 @@ const Import: React.FC = () => {
       document.removeEventListener("dragleave", dragLeaveListener);
       document.removeEventListener("drop", dropHandler);
     };
-  }, []);
+  });
   return (
     <>
       <div
