@@ -29,6 +29,50 @@ export const updateState = (assignments: any) => {
     assignments: assignments,
   });
 };
+export const checkStateStacks = () => {
+  let state = store.getState().reducer;
+  let { undoStack, redoStack } = cloneDeep(state);
+  if (undoStack.length > 20) undoStack.splice(0, undoStack.length - 20);
+  if (redoStack.length > 20) redoStack.splice(0, redoStack.length - 20);
+  updateState({ undoStack, redoStack });
+};
+export const saveState = () => {
+  let state = store.getState().reducer;
+  let {
+    undoStack,
+    mediaFiles,
+    videoTrack,
+    subtitleTracks,
+    mapTracks,
+    selectedId,
+  } = cloneDeep(state);
+  undoStack.push({
+    mediaFiles,
+    videoTrack,
+    subtitleTracks,
+    mapTracks,
+    selectedId,
+  });
+  updateState({ undoStack, redoStack: [] });
+  checkStateStacks();
+};
+export const undo = () => {
+  if (!store.getState().reducer.redoStack.length) saveState();
+  let state = store.getState().reducer;
+  let { undoStack, redoStack } = cloneDeep(state);
+  redoStack.push(undoStack.pop());
+  updateState({ undoStack, redoStack, ...undoStack.at(-1) });
+  checkStateStacks();
+};
+export const redo = () => {
+  let state = store.getState().reducer;
+  let { undoStack, redoStack } = cloneDeep(state);
+  let current = redoStack.pop();
+  undoStack.push(current);
+  if (!redoStack.length) undoStack.pop();
+  updateState({ undoStack, redoStack, ...current });
+  checkStateStacks();
+};
 const ffmpeg = createFFmpeg({
   log: true,
   corePath: new URL("./ffmpeg-core/ffmpeg-core.js", document.location.href)
@@ -61,6 +105,7 @@ export const getTrackStart = (track: VideoTrackItem[]) =>
   }, track[0].beginOffset);
 export const importFiles = async (files: FileList) => {
   await initFF();
+  saveState();
   let state = store.getState().reducer;
   let mediaFiles = new Array<MediaFile>();
   let videoTrack = cloneDeep(state.videoTrack);

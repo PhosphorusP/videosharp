@@ -38,7 +38,7 @@ const Properties: React.FC = () => {
                     )}
                   </Form.Item>
                   <Form.Item>
-                    <Button danger>还原到媒体文件长度</Button>
+                    <Button danger>还原到素材长度</Button>
                   </Form.Item>
                 </Form>
               </>

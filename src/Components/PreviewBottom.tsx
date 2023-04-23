@@ -1,5 +1,7 @@
 import {
+  RedoOutlined,
   ScissorOutlined,
+  UndoOutlined,
   VerticalAlignMiddleOutlined,
 } from "@ant-design/icons";
 import { Button, Tooltip, theme } from "antd";
@@ -7,7 +9,8 @@ import { useSelector } from "react-redux";
 import {
   cutAtCursor,
   formatTimestamp,
-  getTrackDuration,
+  redo,
+  undo,
   updateState,
 } from "../store/action";
 
@@ -22,6 +25,30 @@ const PreviewBottom: React.FC = () => {
         </span>
       </div>
       <div>
+        <Tooltip
+          title="撤销"
+          children={
+            <Button
+              type="text"
+              size="small"
+              icon={<UndoOutlined />}
+              disabled={!state.undoStack.length}
+              onClick={() => undo()}
+            />
+          }
+        />
+        <Tooltip
+          title="重做"
+          children={
+            <Button
+              type="text"
+              size="small"
+              icon={<RedoOutlined />}
+              disabled={!state.redoStack.length}
+              onClick={() => redo()}
+            />
+          }
+        />
         <Tooltip
           title="在播放头处拆分"
           children={

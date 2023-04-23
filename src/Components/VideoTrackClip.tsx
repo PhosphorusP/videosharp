@@ -10,6 +10,7 @@ import {
   deleteClip,
   getTrackDuration,
   getTrackStart,
+  saveState,
   updateState,
 } from "../store/action";
 
@@ -35,6 +36,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
     e.stopPropagation();
     setMousePos([e.clientX, e.clientY]);
     setTmpVideoTrack(state.videoTrack);
+    saveState();
     updateState({
       clipOrigin: `${videoTrackItem.id}_${operation}`,
     });

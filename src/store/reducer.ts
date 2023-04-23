@@ -14,6 +14,8 @@ const initialState = {
   selectedId: "",
   clipOrigin: "",
   darkMode: false,
+  undoStack: [],
+  redoStack: [],
 };
 const reducer = (state = initialState, action: any) => {
   switch (action.type) {
