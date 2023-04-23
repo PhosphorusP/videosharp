@@ -42,12 +42,13 @@ const Timeline: React.FC = () => {
       document.removeEventListener("mouseup", timelineDragEndHandler);
     };
   });
-  const { isOver, setNodeRef } = useDroppable({
+  const { isOver, setNodeRef, over } = useDroppable({
     id: "track_video",
     data: {
       accepts: ["video"],
     },
   });
+  console.log(over)
   if (trackDuration) composeCurrentFrame();
   return (
     <div

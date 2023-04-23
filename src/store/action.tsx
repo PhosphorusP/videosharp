@@ -124,6 +124,10 @@ export const importFiles = async (files: FileList) => {
         `${state.projectFPS}`,
         "-vf",
         `scale=${state.projectSize[0]}:${state.projectSize[1]}:force_original_aspect_ratio=decrease,pad=${state.projectSize[0]}:${state.projectSize[1]}:(ow-iw)/2:(oh-ih)/2`,
+        "-profile:v",
+        "baseline",
+        "-preset",
+        "superfast",
         "-f",
         "mp4",
         `${id}`
@@ -216,6 +220,7 @@ export const alignTracks = () => {
 };
 
 export const cutAtCursor = () => {
+  saveState();
   let state = store.getState().reducer;
   let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
   let currentFrame = state.currentFrame as number;
@@ -326,7 +331,9 @@ export const exportVideo = async () => {
     height: state.projectSize[1],
     bitrate: 1e6,
   });
-  let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+  let canvas = document.createElement("canvas"); //document.getElementById("canvas") as HTMLCanvasElement;
+  canvas.width = state.projectSize[0];
+  canvas.height = state.projectSize[1];
   for (let i = 0; i < trackDuration; i++) {
     await composeFrame(i, canvas);
     let frame = new VideoFrame(canvas, {
@@ -387,7 +394,7 @@ export const exportVideo = async () => {
       "-t",
       `${(videoTrack[i].duration / fps).toFixed(3)}`,
       "-f",
-      "mp4",
+      "mp3",
       `${videoTrack[i].id}`
     );
     audioTrackArr.push({

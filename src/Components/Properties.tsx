@@ -1,4 +1,4 @@
-import { Button, Form, InputNumber, Typography } from "antd";
+import { Button, Form } from "antd";
 import { useSelector } from "react-redux";
 import { formatTimestamp } from "../store/action";
 import SelectedPreview from "./SelectedPreview";
@@ -49,7 +49,7 @@ const Properties: React.FC = () => {
             <Form>
               <Form.Item label="宽度">{state.projectSize[0]}</Form.Item>
               <Form.Item label="高度">{state.projectSize[1]}</Form.Item>
-              <Form.Item label="帧速率">{state.projectFPS}</Form.Item>
+              <Form.Item label="帧速率">{state.projectFPS}fps</Form.Item>
             </Form>
           </>
         );
