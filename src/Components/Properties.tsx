@@ -9,12 +9,12 @@ const Properties: React.FC = () => {
     <div style={{ padding: "8px" }}>
       {(() => {
         if (
-          (state.videoTrack as VideoTrackItem[]).find(
+          (state.videoTrack as VideoTrackClip[]).find(
             (i) => i.id === state.selectedId
           )
         )
           return (() => {
-            let selected = (state.videoTrack as VideoTrackItem[]).find(
+            let selected = (state.videoTrack as VideoTrackClip[]).find(
               (i) => i.id === state.selectedId
             );
             let mediaFile = (state.mediaFiles as MediaFile[]).find(

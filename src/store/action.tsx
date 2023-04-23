@@ -1,6 +1,6 @@
 import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import { FFprobeWorker } from "ffprobe-wasm";
-import { cloneDeep } from "lodash-es";
+import { cloneDeep, max, min } from "lodash-es";
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 import { nanoid } from "nanoid";
 import store from "./store";
@@ -93,12 +93,20 @@ export const initFF = async () => {
     },
   });
 };
-export const getTrackDuration = (track: VideoTrackItem[]) =>
+export const getTrackDuration = (track: TrackClip[]) =>
   track.reduce((a: number, b) => {
     let endB = b.beginOffset + b.duration;
     return a > endB ? a : endB;
   }, 0);
-export const getTrackStart = (track: VideoTrackItem[]) =>
+export const getTracksDuration = () => {
+  let state = store.getState().reducer;
+  let durations = [] as number[];
+  durations.push(getTrackDuration(state.videoTrack));
+  for (let mapTrack of state.mapTracks as MapTrackItem[])
+    durations.push(getTrackDuration(mapTrack.clips));
+  return max(durations) as number;
+};
+export const getTrackStart = (track: TrackClip[]) =>
   track.reduce((a: number, b) => {
     let endB = b.beginOffset;
     return a < endB ? a : endB;
@@ -108,7 +116,8 @@ export const importFiles = async (files: FileList) => {
   saveState();
   let state = store.getState().reducer;
   let mediaFiles = new Array<MediaFile>();
-  let videoTrack = cloneDeep(state.videoTrack);
+  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackClip[];
+  let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
   updateState({
     importing: true,
   });
@@ -168,29 +177,41 @@ export const importFiles = async (files: FileList) => {
         thumbnailDataUrl: thumbnailDataUrl,
         duration: duration,
       });
-      let beginOffset = getTrackDuration(videoTrack);
       videoTrack.push({
         id: nanoid(),
         mediaFileId: id,
         mediaOffset: 0,
-        beginOffset: beginOffset,
+        beginOffset: getTrackDuration(videoTrack),
         duration: duration,
-      } as VideoTrackItem);
+      } as VideoTrackClip);
     } else if (["image/jpeg", "image/png"].indexOf(i.type) >= 0) {
+      let id = nanoid();
       mediaFiles.push({
         fileName: i.name,
-        id: nanoid(),
+        id: id,
         type: "map",
         objectURL: URL.createObjectURL(i),
         file: i,
         thumbnailDataUrl: await readFileAsBase64(i),
         duration: 0,
       });
+      if (!mapTracks.length)
+        mapTracks.push({
+          id: nanoid(),
+          clips: [] as MapTrackClip[],
+        } as MapTrackItem);
+      mapTracks[0].clips.push({
+        id: nanoid(),
+        mediaFileId: id,
+        beginOffset: getTrackDuration(mapTracks[0].clips),
+        duration: state.projectFPS * 3,
+      });
     }
   }
   updateState({
     mediaFiles: cloneDeep(state.mediaFiles).concat(mediaFiles),
-    videoTrack: videoTrack,
+    videoTrack,
+    mapTracks,
     importing: false,
   });
   ffmpeg.exit();
@@ -199,30 +220,58 @@ export const importFiles = async (files: FileList) => {
 
 export const deleteClip = (id: string) => {
   let state = store.getState().reducer;
-  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
-  videoTrack.splice(
-    videoTrack.findIndex((i) => i.id === id),
-    1
-  );
+  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackClip[];
+  let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
+  if (videoTrack.findIndex((i) => i.id === id) >= 0)
+    videoTrack.splice(
+      videoTrack.findIndex((i) => i.id === id),
+      1
+    );
+  for (let mapTrack of mapTracks)
+    if (mapTrack.clips.findIndex((i) => i.id === id) >= 0)
+      mapTrack.clips.splice(
+        mapTrack.clips.findIndex((i) => i.id === id),
+        1
+      );
   updateState({
-    videoTrack: videoTrack,
+    videoTrack,
+    mapTracks,
+    selectedId: "",
+  });
+};
+
+export const appendMapTrack = () => {
+  const mapTracks = cloneDeep(store.getState().reducer.mapTracks);
+  mapTracks.push({
+    id: nanoid(),
+    clips: [] as MapTrackClip[],
+  } as MapTrackItem);
+  updateState({
+    mapTracks: mapTracks,
   });
 };
 
 export const alignTracks = () => {
   let state = store.getState().reducer;
-  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
-  let start = getTrackStart(videoTrack);
+  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackClip[];
+  let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
+  let starts = [] as number[];
+  if (videoTrack.length) starts.push(getTrackStart(videoTrack));
+  for (let mapTrack of mapTracks)
+    if (mapTrack.clips.length) starts.push(getTrackStart(mapTrack.clips));
+  let start = min(starts) as number;
   for (let i of videoTrack) i.beginOffset -= start;
+  for (let i of mapTracks) for (let j of i.clips) j.beginOffset -= start;
   updateState({
-    videoTrack: videoTrack,
+    videoTrack,
+    mapTracks,
   });
 };
 
 export const cutAtCursor = () => {
   saveState();
   let state = store.getState().reducer;
-  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
+  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackClip[];
   let currentFrame = state.currentFrame as number;
   let clip = videoTrack.find(
     (i) =>
@@ -236,11 +285,11 @@ export const cutAtCursor = () => {
       mediaOffset: currentFrame - clip.beginOffset + clip.mediaOffset,
       beginOffset: currentFrame,
       duration: clip.duration - (currentFrame - clip.beginOffset),
-    } as VideoTrackItem);
+    } as VideoTrackClip);
     clip.duration = currentFrame - clip.beginOffset;
   }
   updateState({
-    videoTrack: videoTrack,
+    videoTrack,
   });
 };
 
@@ -259,7 +308,7 @@ export const composeFrame = async (
 
   // compose videoTrack
   {
-    let videoTrack = state.videoTrack as VideoTrackItem[];
+    let videoTrack = state.videoTrack as VideoTrackClip[];
     let mediaFiles = state.mediaFiles as MediaFile[];
     let vid = videoTrack.find(
       (i) =>
@@ -311,7 +360,7 @@ export const composeCurrentFrame = () => {
 export const exportVideo = async () => {
   await initFF();
   let state = store.getState().reducer;
-  const trackDuration = getTrackDuration(state.videoTrack);
+  const trackDuration = getTracksDuration();
   let muxer = new Muxer({
     target: new ArrayBufferTarget(),
     video: {
@@ -346,7 +395,7 @@ export const exportVideo = async () => {
   muxer.finalize();
   let { buffer } = muxer.target;
   let composed = new Blob([buffer], { type: "video/mp4" });
-  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
+  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackClip[];
   let mediaFiles = state.mediaFiles as MediaFile[];
   let fps = state.projectFPS;
   for (let i of mediaFiles)

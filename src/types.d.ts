@@ -7,11 +7,18 @@ type MediaFile = {
   fileName: string;
   duration: number;
 };
-type VideoTrackItem = {
+type TrackClip = {
   id: string;
   mediaFileId: string;
-  mediaOffset: number;
   beginOffset: number;
   duration: number;
 };
+type VideoTrackClip = TrackClip & {
+  mediaOffset: number;
+};
+type MapTrackItem = {
+  id: string;
+  clips: MapTrackClip[];
+};
+type MapTrackClip = TrackClip & {};
 type AudioTrackItem = { fileName: string };

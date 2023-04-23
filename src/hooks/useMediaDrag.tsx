@@ -19,7 +19,7 @@ export function useMediaDrag() {
       over.data.current!.accepts.includes(active.data.current!.type)
     ) {
       if (over.id === "track_video") {
-        let videoTrack = cloneDeep(state.videoTrack) as VideoTrackItem[];
+        let videoTrack = cloneDeep(state.videoTrack) as VideoTrackClip[];
         let mediaFiles = cloneDeep(state.mediaFiles) as MediaFile[];
         videoTrack.push({
           id: nanoid(),
@@ -27,9 +27,23 @@ export function useMediaDrag() {
           mediaOffset: 0,
           beginOffset: getTrackDuration(videoTrack),
           duration: mediaFiles.find((i) => i.id === active.id)!.duration,
-        } as VideoTrackItem);
+        } as VideoTrackClip);
         updateState({
-          videoTrack: videoTrack,
+          videoTrack,
+        });
+      } else if ((over.id as string).indexOf("track_map_") === 0) {
+        let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
+        let mapTrack = mapTracks.find(
+          (i) => i.id === (over.id as string).split("track_map_").at(-1)
+        ) as MapTrackItem;
+        mapTrack.clips.push({
+          id: nanoid(),
+          mediaFileId: active.id,
+          beginOffset: getTrackDuration(mapTrack.clips),
+          duration: state.projectFPS * 3,
+        } as MapTrackClip);
+        updateState({
+          mapTracks,
         });
       }
     }

@@ -50,7 +50,7 @@ const PreviewBottom: React.FC = () => {
           }
         />
         <Tooltip
-          title="在播放头处拆分"
+          title="在播放头处拆分视频"
           children={
             <Button
               type="text"

@@ -12,6 +12,7 @@ const MediaFiles: React.FC = () => {
           type={mediaFile.type}
           fileName={mediaFile.fileName}
           thumbnailDataUrl={mediaFile.thumbnailDataUrl}
+          dragOverlay={false}
         />
       ))}
     </>

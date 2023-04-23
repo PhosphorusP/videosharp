@@ -1,12 +1,6 @@
+import { Button, Space } from "antd";
 import { useSelector } from "react-redux";
-import {
-  composeCurrentFrame,
-  exportVideo,
-  getTrackStart,
-  updateState,
-} from "../store/action";
-import { cloneDeep } from "lodash-es";
-import { Button } from "antd";
+import { exportVideo } from "../store/action";
 
 const Preview: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
@@ -24,10 +18,12 @@ const Preview: React.FC = () => {
           zIndex: "-1000",
         }}
       />
-      <div style={{padding: '8px'}}>
-        <Button type="primary" onClick={() => exportVideo()}>
-          导出视频
-        </Button>
+      <div style={{ padding: "8px" }}>
+        <Space direction="horizontal">
+          <Button type="primary" onClick={() => exportVideo()}>
+            测试导出视频
+          </Button>
+        </Space>
       </div>
       <div
         style={{
@@ -36,7 +32,7 @@ const Preview: React.FC = () => {
           justifyContent: "center",
           alignItems: "center",
           overflow: "hidden",
-          padding: '8px'
+          padding: "8px",
         }}
       >
         <canvas

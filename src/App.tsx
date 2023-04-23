@@ -39,7 +39,7 @@ function App() {
         >
           <div
             style={{
-              width: "256px",
+              width: "200px",
               boxSizing: "border-box",
               borderRight: `1px solid ${token.colorBorderSecondary}`,
               display: "flex",
@@ -80,7 +80,7 @@ function App() {
           </div>
           <div
             style={{
-              width: "320px",
+              width: "256px",
             }}
           >
             <PanelHeader label={<>属性</>} icon={<BarsOutlined />} />
@@ -98,18 +98,21 @@ function App() {
         >
           <Timeline />
         </div>
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {(() => {
             let mediaFile = (state.mediaFiles as MediaFile[]).find(
               (i) => i.id === draggingID
             );
             return mediaFile ? (
-              <MediaFileItem
-                id={mediaFile.id}
-                fileName={mediaFile.fileName}
-                thumbnailDataUrl={mediaFile.thumbnailDataUrl}
-                type="video"
-              />
+              <div style={{ opacity: 1 }}>
+                <MediaFileItem
+                  id={mediaFile.id}
+                  fileName={mediaFile.fileName}
+                  thumbnailDataUrl={mediaFile.thumbnailDataUrl}
+                  dragOverlay={true}
+                  type="video"
+                />
+              </div>
             ) : undefined;
           })()}
         </DragOverlay>

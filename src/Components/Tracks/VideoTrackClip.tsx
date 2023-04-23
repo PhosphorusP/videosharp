@@ -1,33 +1,37 @@
-import { EllipsisOutlined } from "@ant-design/icons";
+import { EllipsisOutlined, VideoCameraOutlined } from "@ant-design/icons";
 import { theme } from "antd";
 import { cloneDeep } from "lodash-es";
 import { useEffect, useState } from "react";
-import { Item, Menu, useContextMenu } from "react-contexify";
+import { useContextMenu } from "react-contexify";
 import "react-contexify/dist/ReactContexify.css";
 import { useSelector } from "react-redux";
 import {
   alignTracks,
-  deleteClip,
   getTrackDuration,
   getTrackStart,
   saveState,
   updateState,
-} from "../store/action";
+} from "../../store/action";
 
 type VideoTrackClipProps = {
-  videoTrackItem: VideoTrackItem;
+  videoTrackClip: VideoTrackClip;
+  trackId: string;
 };
 const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
-  videoTrackItem,
+  videoTrackClip,
+  trackId,
 }: VideoTrackClipProps) => {
   const state: any = useSelector((state: any) => state.reducer);
   const [mousePos, setMousePos] = useState([0, 0]);
-  const [tmpVideoTrack, setTmpVideoTrack] = useState([] as VideoTrackItem[]);
+  const [tmpVideoTrack, setTmpVideoTrack] = useState([] as VideoTrackClip[]);
   const handleWidth = 8;
+  const offsetLeft =
+    videoTrackClip.beginOffset * state.timelineRatio +
+    (state.timelineCollapsed ? 28 : 56);
   const { token } = theme.useToken();
   const clipWidth =
-    (videoTrackItem.duration -
-      (videoTrackItem.beginOffset + (videoTrackItem.duration as number) ===
+    (videoTrackClip.duration -
+      (videoTrackClip.beginOffset + (videoTrackClip.duration as number) ===
       getTrackDuration(state.videoTrack)
         ? 1
         : 0)) *
@@ -38,21 +42,21 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
     setTmpVideoTrack(state.videoTrack);
     saveState();
     updateState({
-      clipOrigin: `${videoTrackItem.id}_${operation}`,
+      clipOrigin: `${videoTrackClip.id}_${operation}`,
     });
   };
-  const showContextMenu = useContextMenu({
-    id: videoTrackItem.id,
-  }).show;
+  const { show: showContextMenu } = useContextMenu({
+    id: trackId,
+  });
   useEffect(() => {
     let mouseMoveHandler: any = (e: React.MouseEvent) => {
-      if (state.clipOrigin === `${videoTrackItem.id}_move`) {
+      if (state.clipOrigin === `${videoTrackClip.id}_move`) {
         e.stopPropagation();
         if (e.buttons) {
           let videoTrack = cloneDeep(tmpVideoTrack);
           let currentClip = videoTrack.find(
-            (i) => i.id === videoTrackItem.id
-          ) as VideoTrackItem;
+            (i) => i.id === videoTrackClip.id
+          ) as VideoTrackClip;
           let offset = [
             Math.round((e.clientX - mousePos[0]) / state.timelineRatio),
             Math.round((e.clientY - mousePos[1]) / state.timelineRatio),
@@ -62,7 +66,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
               .filter((i) => i.id !== currentClip.id)
               .filter(
                 (i) =>
-                  i.beginOffset < currentClip.beginOffset+ offset[0] &&
+                  i.beginOffset < currentClip.beginOffset + offset[0] &&
                   i.beginOffset + i.duration - 1 >=
                     currentClip.beginOffset + offset[0]
               ).length
@@ -81,16 +85,16 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           }
 
           updateState({
-            videoTrack: videoTrack,
+            videoTrack,
           });
         }
-      } else if (state.clipOrigin === `${videoTrackItem.id}_clip_l`) {
+      } else if (state.clipOrigin === `${videoTrackClip.id}_clip_l`) {
         e.stopPropagation();
         if (e.buttons) {
           let videoTrack = cloneDeep(tmpVideoTrack);
           let currentClip = videoTrack.find(
-            (i) => i.id === videoTrackItem.id
-          ) as VideoTrackItem;
+            (i) => i.id === videoTrackClip.id
+          ) as VideoTrackClip;
           let offset = [
             Math.round((e.clientX - mousePos[0]) / state.timelineRatio),
             Math.round((e.clientY - mousePos[1]) / state.timelineRatio),
@@ -110,16 +114,16 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           currentClip.mediaOffset += offset[0];
           currentClip.duration -= offset[0];
           updateState({
-            videoTrack: videoTrack,
+            videoTrack,
           });
         }
-      } else if (state.clipOrigin === `${videoTrackItem.id}_clip_r`) {
+      } else if (state.clipOrigin === `${videoTrackClip.id}_clip_r`) {
         e.stopPropagation();
         if (e.buttons) {
           let videoTrack = cloneDeep(tmpVideoTrack);
           let currentClip = videoTrack.find(
-            (i) => i.id === videoTrackItem.id
-          ) as VideoTrackItem;
+            (i) => i.id === videoTrackClip.id
+          ) as VideoTrackClip;
           let offset = [
             Math.round((e.clientX - mousePos[0]) / state.timelineRatio),
             Math.round((e.clientY - mousePos[1]) / state.timelineRatio),
@@ -145,7 +149,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
               nextClips.map((i) => (i.beginOffset -= nextOffset));
           }
           updateState({
-            videoTrack: videoTrack,
+            videoTrack,
           });
         }
       }
@@ -154,9 +158,9 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
     let mouseUpHandler: any = () => {
       if (
         [
-          `${videoTrackItem.id}_move`,
-          `${videoTrackItem.id}_clip_l`,
-          `${videoTrackItem.id}_clip_r`,
+          `${videoTrackClip.id}_move`,
+          `${videoTrackClip.id}_clip_l`,
+          `${videoTrackClip.id}_clip_r`,
         ].indexOf(state.clipOrigin) >= 0
       ) {
         alignTracks();
@@ -180,7 +184,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           style={{
             position: "absolute",
             top: 0,
-            left: `${videoTrackItem.beginOffset * state.timelineRatio}px`,
+            left: `${offsetLeft}px`,
             height: "14px",
             width: `${clipWidth}px`,
             lineHeight: "14px",
@@ -193,29 +197,29 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
         >
           {
             state.mediaFiles.find(
-              (i: MediaFile) => i.id === videoTrackItem.mediaFileId
+              (i: MediaFile) => i.id === videoTrackClip.mediaFileId
             ).fileName
           }
         </div>
       )}
       <div
-        key={videoTrackItem.id}
+        key={videoTrackClip.id}
         style={{
           position: "absolute",
           top: state.timelineCollapsed ? 0 : "16px",
-          left: `${videoTrackItem.beginOffset * state.timelineRatio}px`,
+          left: `${offsetLeft}px`,
 
           display: "inline-block",
           boxSizing: "border-box",
           boxShadow:
-            state.selectedId === videoTrackItem.id && !state.timelineCollapsed
+            state.selectedId === videoTrackClip.id && !state.timelineCollapsed
               ? `0 4px 0 ${handleColor} inset, 0 -4px 0 ${handleColor} inset`
               : undefined,
           height: state.timelineCollapsed ? "28px" : "56px",
           width: `${clipWidth}px`,
           backgroundImage: `url(${
             state.mediaFiles.find(
-              (i: MediaFile) => i.id === videoTrackItem.mediaFileId
+              (i: MediaFile) => i.id === videoTrackClip.mediaFileId
             ).thumbnailDataUrl
           })`,
           backgroundRepeat: "repeat-x",
@@ -230,19 +234,21 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           e.stopPropagation();
           dragStartHandler(e, "move");
           updateState({
-            selectedId: videoTrackItem.id,
+            selectedId: videoTrackClip.id,
           });
         }}
-        onContextMenu={(e) => showContextMenu({ event: e })}
+        onContextMenu={(e) =>
+          showContextMenu({ event: e, props: { id: videoTrackClip.id } })
+        }
       ></div>
-      {state.selectedId === videoTrackItem.id ? (
+      {state.selectedId === videoTrackClip.id ? (
         <>
           <div
             style={{
               pointerEvents: "none",
               position: "absolute",
               top: state.timelineCollapsed ? 0 : "16px",
-              left: `${videoTrackItem.beginOffset * state.timelineRatio}px`,
+              left: `${offsetLeft}px`,
               display: "inline-block",
               boxSizing: "border-box",
               outline: `2px solid ${token.colorPrimary}`,
@@ -256,7 +262,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
             style={{
               position: "absolute",
               top: state.timelineCollapsed ? 0 : "16px",
-              left: `${videoTrackItem.beginOffset * state.timelineRatio}px`,
+              left: `${offsetLeft}px`,
               width: `${handleWidth}px`,
               height: state.timelineCollapsed ? "28px" : "56px",
               backgroundColor: `${handleColor}`,
@@ -272,10 +278,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
             style={{
               position: "absolute",
               top: state.timelineCollapsed ? 0 : "16px",
-              left: `${
-                videoTrackItem.beginOffset * state.timelineRatio -
-                handleWidth / 2
-              }px`,
+              left: `${offsetLeft - handleWidth / 2}px`,
               width: `${handleWidth * 2}px`,
               height: state.timelineCollapsed ? "28px" : "56px",
               cursor: "ew-resize",
@@ -286,11 +289,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
             style={{
               position: "absolute",
               top: state.timelineCollapsed ? 0 : "16px",
-              left: `${
-                videoTrackItem.beginOffset * state.timelineRatio +
-                clipWidth -
-                handleWidth
-              }px`,
+              left: `${offsetLeft + clipWidth - handleWidth}px`,
               width: `${handleWidth}px`,
               height: state.timelineCollapsed ? "28px" : "56px",
               backgroundColor: `${handleColor}`,
@@ -307,10 +306,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
               position: "absolute",
               top: state.timelineCollapsed ? 0 : "16px",
               left: `${
-                videoTrackItem.beginOffset * state.timelineRatio +
-                clipWidth -
-                handleWidth -
-                handleWidth / 2
+                offsetLeft + clipWidth - handleWidth - handleWidth / 2
               }px`,
               width: `${handleWidth * 2}px`,
               height: state.timelineCollapsed ? "28px" : "56px",
@@ -320,9 +316,6 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           />
         </>
       ) : undefined}
-      <Menu id={videoTrackItem.id} theme={state.darkMode ? "dark" : "light"}>
-        <Item onClick={() => deleteClip(videoTrackItem.id)}>删除</Item>
-      </Menu>
     </>
   );
 };

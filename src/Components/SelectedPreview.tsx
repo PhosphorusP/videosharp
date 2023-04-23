@@ -47,7 +47,7 @@ const SelectedPreview: React.FC<SelectedPreviewProps> = ({
         <div style={{ color: token.colorText }}>{title}</div>
         <div
           style={{
-            color: token.colorTextDisabled,
+            color: token.colorTextSecondary,
             fontSize: "12px",
             overflow: "hidden",
             textOverflow: "ellipsis",

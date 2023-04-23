@@ -1,21 +1,27 @@
+import { Button, Dropdown, Popover, theme } from "antd";
 import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import {
+  appendMapTrack,
   composeCurrentFrame,
-  getTrackDuration,
+  getTracksDuration,
   setCurrentFrame,
   updateState,
 } from "../store/action";
-import { theme } from "antd";
-import VideoTrackClip from "./VideoTrackClip";
-import { useDroppable } from "@dnd-kit/core";
+import MapTrack from "./Tracks/MapTrack";
+import VideoTrack from "./Tracks/VideoTrack";
+import {
+  AlignLeftOutlined,
+  PictureOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
 
 const Timeline: React.FC = () => {
   const padding = 2;
   const { token } = theme.useToken();
   const state: any = useSelector((state: any) => state.reducer);
   const rulerRef = useRef(null);
-  const trackDuration = getTrackDuration(state.videoTrack);
+  const trackDuration = getTracksDuration();
   const timelineDragHandler: any = (e: React.MouseEvent) => {
     if (state.clipOrigin === "timeline") {
       let offsetX =
@@ -42,21 +48,14 @@ const Timeline: React.FC = () => {
       document.removeEventListener("mouseup", timelineDragEndHandler);
     };
   });
-  const { isOver, setNodeRef, over } = useDroppable({
-    id: "track_video",
-    data: {
-      accepts: ["video"],
-    },
-  });
-  console.log(over)
   if (trackDuration) composeCurrentFrame();
   return (
     <div
       style={{
         flex: 1,
+        maxHeight: "50vh",
+        overflowY: "scroll",
         overflowX: "scroll",
-        display: "flex",
-        flexDirection: "column",
         paddingLeft: `${padding}px`,
         paddingRight: `${padding}px`,
         paddingBottom: "2px",
@@ -65,9 +64,41 @@ const Timeline: React.FC = () => {
       onMouseDown={() => updateState({ selectedId: "" })}
     >
       <div
+        style={{
+          height: "18px",
+          marginBottom: "-18px",
+          width: `${state.timelineCollapsed ? 28 : 56}px`,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Popover
+          content={
+            <>
+              <Button
+                type="text"
+                icon={<PictureOutlined />}
+                onClick={appendMapTrack}
+              >
+                贴图轨道
+              </Button>
+              <Button type="text" icon={<AlignLeftOutlined />}>
+                字幕轨道
+              </Button>
+            </>
+          }
+        >
+          <PlusOutlined
+            style={{ fontSize: "14px", color: token.colorPrimary }}
+          />
+        </Popover>
+      </div>
+      <div
         ref={rulerRef}
         style={{
           boxSizing: "border-box",
+          marginLeft: `${state.timelineCollapsed ? 28 : 56}px`,
           height: "18px",
           width: `${
             trackDuration ? (trackDuration - 1) * state.timelineRatio : 0
@@ -77,7 +108,6 @@ const Timeline: React.FC = () => {
           borderRight: `1px solid ${token.colorBorderSecondary}`,
           borderBottom: `1px solid ${token.colorBorderSecondary}`,
           borderRadius: "0 0 4px 4px",
-          marginBottom: "4px",
           position: "relative",
           overflow: "hidden",
         }}
@@ -129,35 +159,18 @@ const Timeline: React.FC = () => {
             </div>
           ))}
       </div>
-      <div
-        style={{
-          whiteSpace: "nowrap",
-          position: "relative",
-          height: state.timelineCollapsed ? `${28}px` : `${56 + 16}px`,
-        }}
-      >
-        <div
-          ref={setNodeRef}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: isOver ? token.colorPrimaryBgHover : undefined,
-          }}
-        />
-        {state.videoTrack.map((videoTrackItem: VideoTrackItem) => (
-          <VideoTrackClip
-            key={videoTrackItem.id}
-            videoTrackItem={videoTrackItem}
-          />
-        ))}
-      </div>
+      <VideoTrack />
+      {state.mapTracks.map((i: MapTrackItem) => (
+        <MapTrack key={i.id} mapTrack={i} />
+      ))}
       <div
         style={{
           position: "absolute",
-          left: `${padding + state.currentFrame * state.timelineRatio}px`,
+          left: `${
+            padding +
+            state.currentFrame * state.timelineRatio +
+            (state.timelineCollapsed ? 28 : 56)
+          }px`,
           top: "0px",
           width: "1px",
           height: "100%",
