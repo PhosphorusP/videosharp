@@ -217,16 +217,16 @@ export const importFiles = async (files: FileList) => {
         duration: 0,
         data: { mediaSize: mediaSize },
       });
+      let scaledMediaSize = scaleMediaSize(mediaSize);
       mapTracks[0].clips.push({
         id: nanoid(),
         mediaFileId: id,
         beginOffset: getTrackDuration(mapTracks[0].clips),
         duration: state.projectFPS * 3,
-        mediaSize: mediaSize,
-        composeSize: mediaSize,
+        composeSize: scaledMediaSize,
         composePos: [
-          (state.projectSize[0] - mediaSize[0]) / 2,
-          (state.projectSize[1] - mediaSize[1]) / 2,
+          (state.projectSize[0] - scaledMediaSize[0]) / 2,
+          (state.projectSize[1] - scaledMediaSize[1]) / 2,
         ],
       });
     }
@@ -322,6 +322,29 @@ export const cutAtCursor = () => {
   });
 };
 
+export const scaleMediaSize: (
+  mediaSize: [number, number]
+) => [number, number] = (mediaSize: [number, number]) => {
+  let state = store.getState().reducer;
+  let w = mediaSize[0],
+    h = mediaSize[1];
+  console.log([w, h]);
+  if (w > state.projectSize[0]) {
+    let tmpw = state.projectSize[0],
+      tmph = (h * state.projectSize[0]) / w;
+    w = tmpw;
+    h = tmph;
+  }
+  if (h > state.projectSize[1]) {
+    let tmph = state.projectSize[1],
+      tmpw = (w * state.projectSize[1]) / h;
+    w = tmpw;
+    h = tmph;
+  }
+  console.log([w, h]);
+  return [w, h];
+};
+
 export const setCurrentFrame = (frameNum: number) => {
   updateState({
     currentFrame: frameNum,
@@ -330,11 +353,20 @@ export const setCurrentFrame = (frameNum: number) => {
 
 export const composeFrame = async (
   frameNum: number,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
+  forExport: boolean
 ) => {
   let state = store.getState().reducer;
-  let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+  let composeCanvas = forExport ? canvas : document.createElement("canvas");
+  composeCanvas.width = canvas.width;
+  composeCanvas.height = canvas.height;
+  let finalCtx = canvas.getContext("2d") as CanvasRenderingContext2D;
+  let ctx = composeCanvas.getContext("2d") as CanvasRenderingContext2D;
   let tracksSort = cloneDeep(state.tracksSort).reverse();
+
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, state.projectSize[0], state.projectSize[1]);
+
   for (let t of tracksSort) {
     let trackId = t.toString();
     if (trackId === "track_video") {
@@ -377,9 +409,6 @@ export const composeFrame = async (
             videoHost.currentTime = currentTime;
           }
         });
-      } else {
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, state.projectSize[0], state.projectSize[1]);
       }
     } else if (trackId.indexOf("track_map_") === 0) {
       let mapTracks = state.mapTracks as MapTrackItem[];
@@ -411,12 +440,15 @@ export const composeFrame = async (
       }
     }
   }
+  if (!forExport && state.currentFrame === frameNum)
+    finalCtx.drawImage(composeCanvas, 0, 0);
 };
 export const composeCurrentFrame = () => {
   let state = store.getState().reducer;
   composeFrame(
     state.currentFrame,
-    document.getElementById("canvas") as HTMLCanvasElement
+    document.getElementById("canvas") as HTMLCanvasElement,
+    false
   );
 };
 export const exportVideo = async () => {
@@ -446,7 +478,7 @@ export const exportVideo = async () => {
   canvas.width = state.projectSize[0];
   canvas.height = state.projectSize[1];
   for (let i = 0; i < trackDuration; i++) {
-    await composeFrame(i, canvas);
+    await composeFrame(i, canvas, true);
     let frame = new VideoFrame(canvas, {
       timestamp: (i * 1e6) / state.projectFPS,
     });
@@ -505,7 +537,7 @@ export const exportVideo = async () => {
       "-t",
       `${(videoTrack[i].duration / fps).toFixed(3)}`,
       "-f",
-      "mp3",
+      "mp4",
       `${videoTrack[i].id}`
     );
     audioTrackArr.push({
@@ -515,6 +547,7 @@ export const exportVideo = async () => {
   }
   //generate audio
   let fileList = audioTrackArr.map((i) => `file ${i.fileName}`).join("\n");
+  console.log(fileList);
   ffmpeg.FS("writeFile", "concat_list.txt", fileList);
   await ffmpeg.run(
     "-f",

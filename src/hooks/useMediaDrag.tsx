@@ -3,7 +3,7 @@ import { cloneDeep } from "lodash-es";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { getTrackDuration, updateState } from "../store/action";
+import { getTrackDuration, scaleMediaSize, updateState } from "../store/action";
 
 export function useMediaDrag() {
   const state: any = useSelector((state: any) => state.reducer);
@@ -40,13 +40,12 @@ export function useMediaDrag() {
         let mediaFile = mediaFiles.find(
           (i) => i.id === (active.id as string)
         ) as MediaFile;
-        let mediaSize = mediaFile.data.mediaSize;
+        let mediaSize = scaleMediaSize(mediaFile.data.mediaSize);
         mapTrack.clips.push({
           id: nanoid(),
           mediaFileId: mediaFile.id,
           beginOffset: getTrackDuration(mapTrack.clips),
           duration: state.projectFPS * 3,
-          mediaSize: mediaSize,
           composeSize: mediaSize,
           composePos: [
             (state.projectSize[0] - mediaSize[0]) / 2,

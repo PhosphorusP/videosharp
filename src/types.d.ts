@@ -22,7 +22,6 @@ type MapTrackItem = {
   clips: MapTrackClip[];
 };
 type MapTrackClip = TrackClip & {
-  mediaSize: [number, number];
   composePos: [number, number];
   composeSize: [number, number];
 };
