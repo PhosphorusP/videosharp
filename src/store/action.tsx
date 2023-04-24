@@ -368,6 +368,8 @@ export const composeFrame = async (
   ctx.fillRect(0, 0, state.projectSize[0], state.projectSize[1]);
 
   for (let t of tracksSort) {
+    ctx.restore();
+    ctx.save();
     let trackId = t.toString();
     if (trackId === "track_video") {
       let videoTrack = state.videoTrack as VideoTrackClip[];
@@ -442,11 +444,9 @@ export const composeFrame = async (
           img.composeSize[0],
           img.composeSize[1]
         );
-        ctx.restore();
       }
     }
   }
-  ctx.restore();
   if (!forExport && store.getState().reducer.currentFrame === frameNum)
     finalCtx.drawImage(composeCanvas, 0, 0);
 };
