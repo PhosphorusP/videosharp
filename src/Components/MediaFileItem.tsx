@@ -39,7 +39,7 @@ const MediaFileItem: React.FC<MediaFileItemProps> = ({
     >
       <div
         style={{
-          width: dragOverlay ? "512px" : "100%",
+          width: dragOverlay ? "128px" : "100%",
           paddingBottom: dragOverlay
             ? state.timelineCollapsed
               ? "28px"
