@@ -252,7 +252,14 @@ const Timeline: React.FC = () => {
               <Popover placement="right" trigger="click" content={<>Hello</>}>
                 <div
                   className="sortHandle"
-                  style={{ padding: "8px", cursor: "grab", boxShadow: '0 0 8px #000' }}
+                  style={{
+                    padding: "8px",
+                    cursor: "grab",
+                    fontSize: "16px",
+                    lineHeight: "16px",
+                    backgroundColor: token.colorBgContainer,
+                    borderRadius: '4px'
+                  }}
                 >
                   {icon}
                 </div>

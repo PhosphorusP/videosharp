@@ -329,7 +329,6 @@ export const scaleMediaSize: (
   let state = store.getState().reducer;
   let w = mediaSize[0],
     h = mediaSize[1];
-  console.log([w, h]);
   if (w > state.projectSize[0]) {
     let tmpw = state.projectSize[0],
       tmph = (h * state.projectSize[0]) / w;
@@ -554,7 +553,6 @@ export const exportVideo = async () => {
   }
   //generate audio
   let fileList = audioTrackArr.map((i) => `file ${i.fileName}`).join("\n");
-  console.log(fileList);
   ffmpeg.FS("writeFile", "concat_list.txt", fileList);
   await ffmpeg.run(
     "-f",
