@@ -31,39 +31,30 @@ const MediaFileItem: React.FC<MediaFileItemProps> = ({
       {...listeners}
       {...attributes}
       style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        margin: "8px",
+        marginTop: "8px",
+        width: "50%",
+        display: "inline-block",
         cursor: "default",
       }}
     >
       <div
         style={{
-          width: "48px",
-          height: dragOverlay
+          width: dragOverlay ? "512px" : "100%",
+          paddingBottom: dragOverlay
             ? state.timelineCollapsed
               ? "28px"
               : "56px"
-            : "27px",
+            : "56.25%",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          marginRight: "8px",
+          backgroundImage: `url(${thumbnailDataUrl})`,
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center center",
+          transform: "scale(0.8)",
         }}
-      >
-        <img
-          alt="视频预览图"
-          src={thumbnailDataUrl}
-          draggable={false}
-          style={{
-            maxWidth: dragOverlay ? undefined : "100%",
-            maxHeight: "100%",
-            objectFit: "contain",
-            borderRadius: dragOverlay ? "8px" : "4px",
-          }}
-        />
-      </div>
+      />
       {dragOverlay ? undefined : (
         <div
           style={{
@@ -73,6 +64,8 @@ const MediaFileItem: React.FC<MediaFileItemProps> = ({
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
             fontSize: "12px",
+            textAlign: "center",
+            padding: "0 8px",
           }}
         >
           {fileName}

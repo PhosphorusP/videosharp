@@ -4,7 +4,7 @@ import MediaFileItem from "./MediaFileItem";
 const MediaFiles: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
   return (
-    <>
+    <div>
       {state.mediaFiles.map((mediaFile: MediaFile) => (
         <MediaFileItem
           key={mediaFile.id}
@@ -15,7 +15,7 @@ const MediaFiles: React.FC = () => {
           dragOverlay={false}
         />
       ))}
-    </>
+    </div>
   );
 };
 export default MediaFiles;
