@@ -4,7 +4,7 @@ import {
   PlayCircleOutlined,
 } from "@ant-design/icons";
 import { DndContext, DragOverlay } from "@dnd-kit/core";
-import { theme } from "antd";
+import { Button, theme } from "antd";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import "./App.css";
@@ -17,7 +17,7 @@ import PreviewBottom from "./Components/PreviewBottom";
 import Properties from "./Components/Properties";
 import Timeline from "./Components/Timeline";
 import { useMediaDrag } from "./hooks/useMediaDrag";
-import { initFF } from "./store/action";
+import { exportVideo, initFF } from "./store/action";
 
 function App() {
   const { token } = theme.useToken();
@@ -64,7 +64,20 @@ function App() {
               borderRight: `1px solid ${token.colorBorderSecondary}`,
             }}
           >
-            <PanelHeader label={<>预览</>} icon={<PlayCircleOutlined />} />
+            <PanelHeader
+              label={<>预览</>}
+              icon={<PlayCircleOutlined />}
+              extra={
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => exportVideo()}
+                  style={{ margin: "0 8px" }}
+                >
+                  导出
+                </Button>
+              }
+            />
             <Preview />
             <div
               style={{

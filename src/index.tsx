@@ -23,6 +23,7 @@ const AppProvider: React.FC = () => {
   return (
     <Provider store={store}>
       <ConfigProvider
+        autoInsertSpaceInButton={false}
         theme={{
           algorithm: [
             systemPrefersDark ? theme.darkAlgorithm : theme.defaultAlgorithm,

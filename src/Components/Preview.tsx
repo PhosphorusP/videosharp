@@ -21,13 +21,6 @@ const Preview: React.FC = () => {
           zIndex: "-1000",
         }}
       />
-      <div style={{ padding: "8px" }}>
-        <Space direction="horizontal">
-          <Button type="primary" onClick={() => exportVideo()}>
-            测试导出视频
-          </Button>
-        </Space>
-      </div>
       <div
         style={{
           flex: 1,
