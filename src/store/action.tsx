@@ -112,8 +112,22 @@ export const getTrackStart = (track: TrackClip[]) =>
     return a < endB ? a : endB;
   }, track[0].beginOffset);
 export const importFiles = async (files: FileList) => {
+  const videoMime = ["video/mp4"];
+  const mapMime = ["image/jpeg", "image/png"];
   await initFF();
   saveState();
+  {
+    let state = store.getState().reducer;
+    if (
+      Array.prototype.filter.call(
+        files,
+        (i: File) => mapMime.indexOf(i.type) >= 0
+      ).length &&
+      !state.mapTracks.length
+    ) {
+      appendMapTrack();
+    }
+  }
   let state = store.getState().reducer;
   let mediaFiles = new Array<MediaFile>();
   let videoTrack = cloneDeep(state.videoTrack) as VideoTrackClip[];
@@ -122,7 +136,7 @@ export const importFiles = async (files: FileList) => {
     importing: true,
   });
   for (let i of files) {
-    if (["video/mp4"].indexOf(i.type) >= 0) {
+    if (videoMime.indexOf(i.type) >= 0) {
       let id = nanoid();
       // get thumbnail
       ffmpeg.FS("writeFile", `tmp_${id}`, await fetchFile(i));
@@ -176,6 +190,7 @@ export const importFiles = async (files: FileList) => {
         file: transcoded,
         thumbnailDataUrl: thumbnailDataUrl,
         duration: duration,
+        data: {},
       });
       videoTrack.push({
         id: nanoid(),
@@ -184,27 +199,35 @@ export const importFiles = async (files: FileList) => {
         beginOffset: getTrackDuration(videoTrack),
         duration: duration,
       } as VideoTrackClip);
-    } else if (["image/jpeg", "image/png"].indexOf(i.type) >= 0) {
+    } else if (mapMime.indexOf(i.type) >= 0) {
       let id = nanoid();
+      let objectURL = URL.createObjectURL(i);
+      let mediaSize = await new Promise<[number, number]>((res) => {
+        let img = new Image();
+        img.onload = () => res([img.width, img.height]);
+        img.src = objectURL;
+      });
       mediaFiles.push({
         fileName: i.name,
         id: id,
         type: "map",
-        objectURL: URL.createObjectURL(i),
+        objectURL: objectURL,
         file: i,
         thumbnailDataUrl: await readFileAsBase64(i),
         duration: 0,
+        data: { mediaSize: mediaSize },
       });
-      if (!mapTracks.length)
-        mapTracks.push({
-          id: nanoid(),
-          clips: [] as MapTrackClip[],
-        } as MapTrackItem);
       mapTracks[0].clips.push({
         id: nanoid(),
         mediaFileId: id,
         beginOffset: getTrackDuration(mapTracks[0].clips),
         duration: state.projectFPS * 3,
+        mediaSize: mediaSize,
+        composeSize: mediaSize,
+        composePos: [
+          (state.projectSize[0] - mediaSize[0]) / 2,
+          (state.projectSize[1] - mediaSize[1]) / 2,
+        ],
       });
     }
   }
@@ -241,13 +264,19 @@ export const deleteClip = (id: string) => {
 };
 
 export const appendMapTrack = () => {
-  const mapTracks = cloneDeep(store.getState().reducer.mapTracks);
+  const mapTracks = cloneDeep(
+    store.getState().reducer.mapTracks
+  ) as MapTrackItem[];
+  const tracksSort = cloneDeep(store.getState().reducer.tracksSort) as string[];
+  let id = nanoid();
   mapTracks.push({
-    id: nanoid(),
+    id: id,
     clips: [] as MapTrackClip[],
   } as MapTrackItem);
+  tracksSort.unshift(`track_map_${id}`);
   updateState({
-    mapTracks: mapTracks,
+    mapTracks,
+    tracksSort,
   });
 };
 
@@ -305,48 +334,81 @@ export const composeFrame = async (
 ) => {
   let state = store.getState().reducer;
   let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-
-  // compose videoTrack
-  {
-    let videoTrack = state.videoTrack as VideoTrackClip[];
-    let mediaFiles = state.mediaFiles as MediaFile[];
-    let vid = videoTrack.find(
-      (i) =>
-        frameNum >= i.beginOffset && frameNum <= i.beginOffset + i.duration - 1
-    );
-    if (vid) {
-      let mediaFile = mediaFiles.find(
-        (i: MediaFile) => i.id === vid!.mediaFileId
-      ) as MediaFile;
-      let mediaFrame = frameNum - vid.beginOffset + vid.mediaOffset;
-      let videoHost = document.getElementById("video-host") as HTMLVideoElement;
-      let currentTime = (mediaFrame + 1) / state.projectFPS;
-      await new Promise<void>((res) => {
-        if (videoHost.src === mediaFile.objectURL) {
-          if (Math.abs(currentTime - videoHost.currentTime) < 1e-6) {
-            ctx?.drawImage(videoHost, 0, 0);
-            res();
-          } else {
-            videoHost.requestVideoFrameCallback(() => {
+  let tracksSort = cloneDeep(state.tracksSort).reverse();
+  for (let t of tracksSort) {
+    let trackId = t.toString();
+    if (trackId === "track_video") {
+      let videoTrack = state.videoTrack as VideoTrackClip[];
+      let mediaFiles = state.mediaFiles as MediaFile[];
+      let vid = videoTrack.find(
+        (i) =>
+          frameNum >= i.beginOffset &&
+          frameNum <= i.beginOffset + i.duration - 1
+      ) as VideoTrackClip;
+      if (vid) {
+        let mediaFile = mediaFiles.find(
+          (i) => i.id === vid.mediaFileId
+        ) as MediaFile;
+        let mediaFrame = frameNum - vid.beginOffset + vid.mediaOffset;
+        let videoHost = document.getElementById(
+          "video-host"
+        ) as HTMLVideoElement;
+        let currentTime = (mediaFrame + 1) / state.projectFPS;
+        await new Promise<void>((res) => {
+          if (videoHost.src === mediaFile.objectURL) {
+            if (Math.abs(currentTime - videoHost.currentTime) < 1e-6) {
               ctx?.drawImage(videoHost, 0, 0);
               res();
-            });
+            } else {
+              videoHost.requestVideoFrameCallback(() => {
+                ctx?.drawImage(videoHost, 0, 0);
+                res();
+              });
+              videoHost.currentTime = currentTime;
+            }
+          } else {
+            let videoUpdateHandler = () => {
+              ctx?.drawImage(videoHost, 0, 0);
+              videoHost.removeEventListener("canplay", videoUpdateHandler);
+              res();
+            };
+            videoHost.addEventListener("canplay", videoUpdateHandler);
+            videoHost.src = mediaFile.objectURL;
             videoHost.currentTime = currentTime;
           }
-        } else {
-          let videoUpdateHandler = () => {
-            ctx?.drawImage(videoHost, 0, 0);
-            videoHost.removeEventListener("canplay", videoUpdateHandler);
-            res();
-          };
-          videoHost.addEventListener("canplay", videoUpdateHandler);
-          videoHost.src = mediaFile.objectURL;
-          videoHost.currentTime = currentTime;
-        }
-      });
-    } else {
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, state.projectSize[0], state.projectSize[1]);
+        });
+      } else {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, state.projectSize[0], state.projectSize[1]);
+      }
+    } else if (trackId.indexOf("track_map_") === 0) {
+      let mapTracks = state.mapTracks as MapTrackItem[];
+      let mapTrack = mapTracks.find(
+        (i) => i.id === trackId.split("track_map_").at(-1)
+      ) as MapTrackItem;
+      let mediaFiles = state.mediaFiles as MediaFile[];
+      let img = mapTrack.clips.find(
+        (i) =>
+          frameNum >= i.beginOffset &&
+          frameNum <= i.beginOffset + i.duration - 1
+      ) as MapTrackClip;
+      if (img) {
+        let mediaFile = mediaFiles.find(
+          (i) => i.id === img.mediaFileId
+        ) as MediaFile;
+        let imgObj = new Image();
+        await new Promise((res) => {
+          imgObj.onload = res;
+          imgObj.src = mediaFile.objectURL;
+        });
+        ctx.drawImage(
+          imgObj,
+          img.composePos[0],
+          img.composePos[1],
+          img.composeSize[0],
+          img.composeSize[1]
+        );
+      }
     }
   }
 };

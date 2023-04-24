@@ -1,4 +1,4 @@
-import { EllipsisOutlined, PictureOutlined } from "@ant-design/icons";
+import { EllipsisOutlined } from "@ant-design/icons";
 import { theme } from "antd";
 import { cloneDeep } from "lodash-es";
 import { useEffect, useState } from "react";
@@ -176,7 +176,7 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
     };
   });
   const handleColor = token.colorBgBase;
-  const handleInnerColor = token.colorTextHeading;
+  const handleInnerColor = token.colorPrimary;
   return (
     <>
       {state.timelineCollapsed ? undefined : (
@@ -272,7 +272,10 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
               alignItems: "center",
             }}
           >
-            <EllipsisOutlined rotate={90} style={{ color: handleInnerColor }} />
+            <EllipsisOutlined
+              rotate={90}
+              style={{ color: handleInnerColor, fontSize: "20px" }}
+            />
           </div>
           <div
             style={{
@@ -299,7 +302,10 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
               alignItems: "center",
             }}
           >
-            <EllipsisOutlined rotate={90} style={{ color: handleInnerColor }} />
+            <EllipsisOutlined
+              rotate={90}
+              style={{ color: handleInnerColor, fontSize: "20px" }}
+            />
           </div>
           <div
             style={{

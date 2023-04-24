@@ -2,7 +2,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import { App, theme } from "antd";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { importFiles } from "../store/action";
+import { importFiles, updateState } from "../store/action";
 
 const Import: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
@@ -15,8 +15,8 @@ const Import: React.FC = () => {
     document.addEventListener("drop", defaultHandler);
     document.addEventListener("dragenter", defaultHandler);
     document.addEventListener("dragover", defaultHandler);
-    const dragEnterHandler: EventListener = () => {
-      setMask(true);
+    const dragEnterHandler = (e: DragEvent) => {
+      if (e.dataTransfer!.effectAllowed !== "move") setMask(true);
     };
     document.addEventListener("dragenter", dragEnterHandler);
     const dragLeaveListener: EventListener = (e: any) => {
@@ -36,12 +36,15 @@ const Import: React.FC = () => {
     const dropHandler: any = async (e: DragEvent) => {
       setMask(false);
       e.preventDefault();
-      let fileCnt =
-        e.dataTransfer && e.dataTransfer.files
+      if(e.dataTransfer &&
+        e.dataTransfer!.effectAllowed !== "move"){
+          let fileCnt =e.dataTransfer.files 
           ? await importFiles(e.dataTransfer.files)
           : 0;
       if (fileCnt) message.success(`已导入${fileCnt}个文件`);
       else message.error("没有拖入可供导入的文件");
+        }
+      
       e.preventDefault();
       e.stopPropagation();
     };

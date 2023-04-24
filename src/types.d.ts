@@ -6,6 +6,7 @@ type MediaFile = {
   thumbnailDataUrl: string;
   fileName: string;
   duration: number;
+  data: any;
 };
 type TrackClip = {
   id: string;
@@ -20,5 +21,9 @@ type MapTrackItem = {
   id: string;
   clips: MapTrackClip[];
 };
-type MapTrackClip = TrackClip & {};
+type MapTrackClip = TrackClip & {
+  mediaSize: [number, number];
+  composePos: [number, number];
+  composeSize: [number, number];
+};
 type AudioTrackItem = { fileName: string };

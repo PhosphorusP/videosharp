@@ -4,7 +4,7 @@ const initialState = {
   projectSize: [640, 360],
   projectFPS: 30,
   importing: false,
-  mediaFiles: [],
+  mediaFiles: [] as MediaFile[],
   videoTrack: [] as VideoTrackClip[],
   mapTracks: [] as MapTrackItem[],
   subtitleTracks: [],
@@ -16,6 +16,7 @@ const initialState = {
   darkMode: false,
   undoStack: [],
   redoStack: [],
+  tracksSort: ["track_video"],
 };
 const reducer = (state = initialState, action: any) => {
   switch (action.type) {

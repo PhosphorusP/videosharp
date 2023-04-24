@@ -33,15 +33,26 @@ export function useMediaDrag() {
         });
       } else if ((over.id as string).indexOf("track_map_") === 0) {
         let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
+        let mediaFiles = cloneDeep(state.mediaFiles) as MediaFile[];
         let mapTrack = mapTracks.find(
           (i) => i.id === (over.id as string).split("track_map_").at(-1)
         ) as MapTrackItem;
+        let mediaFile = mediaFiles.find(
+          (i) => i.id === (active.id as string)
+        ) as MediaFile;
+        let mediaSize = mediaFile.data.mediaSize;
         mapTrack.clips.push({
           id: nanoid(),
-          mediaFileId: active.id,
+          mediaFileId: mediaFile.id,
           beginOffset: getTrackDuration(mapTrack.clips),
           duration: state.projectFPS * 3,
-        } as MapTrackClip);
+          mediaSize: mediaSize,
+          composeSize: mediaSize,
+          composePos: [
+            (state.projectSize[0] - mediaSize[0]) / 2,
+            (state.projectSize[1] - mediaSize[1]) / 2,
+          ],
+        });
         updateState({
           mapTracks,
         });

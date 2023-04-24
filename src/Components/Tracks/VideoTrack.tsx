@@ -6,12 +6,11 @@ import { Item, Menu } from "react-contexify";
 import { useSelector } from "react-redux";
 import { deleteClip } from "../../store/action";
 import VideoTrackClip from "./VideoTrackClip";
-import { EllipsisOutlined, VideoCameraOutlined } from "@ant-design/icons";
 
 const VideoTrack: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
   const { token } = theme.useToken();
-  const { isOver, setNodeRef } = useDroppable({
+  const { isOver, setNodeRef: setDroppableNodeRef } = useDroppable({
     id: "track_video",
     data: {
       accepts: ["video"],
@@ -20,9 +19,9 @@ const VideoTrack: React.FC = () => {
   const trackId = nanoid();
   const trackHeight = state.timelineCollapsed ? 28 : 56 + 16;
   return (
-    <>
+    <div>
       <div
-        ref={setNodeRef}
+        ref={setDroppableNodeRef}
         style={{
           position: "sticky",
           left: 0,
@@ -35,26 +34,6 @@ const VideoTrack: React.FC = () => {
           background: isOver ? token.colorPrimaryBgHover : undefined,
         }}
       />
-      <div
-        style={{
-          marginTop: state.timelineCollapsed ? 0 : "16px",
-          marginBottom: `-${trackHeight}px`,
-          boxSizing: "border-box",
-          height: state.timelineCollapsed ? "28px" : "56px",
-          width: `${state.timelineCollapsed ? 28 : 56}px`,
-          zIndex: "20",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <VideoCameraOutlined
-          style={{
-            fontSize: state.timelineCollapsed ? "12px" : "16px",
-            color: token.colorTextSecondary,
-          }}
-        />
-      </div>
       <div
         style={{
           whiteSpace: "nowrap",
@@ -76,12 +55,14 @@ const VideoTrack: React.FC = () => {
         style={
           {
             "--contexify-activeItem-bgColor": token.colorPrimary,
+            "--contexify-activeItem-color": token.colorTextLightSolid,
+            "--contexify-menu-shadow": "0 0 8px rgba(0,0,0,0.2)",
           } as CSSProperties
         }
       >
         <Item onClick={(e) => deleteClip(e.props.id)}>删除此片段</Item>
       </Menu>
-    </>
+    </div>
   );
 };
 export default VideoTrack;

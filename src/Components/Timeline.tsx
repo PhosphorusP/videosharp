@@ -1,4 +1,10 @@
-import { Button, Dropdown, Popover, theme } from "antd";
+import {
+  AlignLeftOutlined,
+  PictureOutlined,
+  PlusOutlined,
+  VideoCameraOutlined,
+} from "@ant-design/icons";
+import { Button, Popover, theme } from "antd";
 import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import {
@@ -10,11 +16,7 @@ import {
 } from "../store/action";
 import MapTrack from "./Tracks/MapTrack";
 import VideoTrack from "./Tracks/VideoTrack";
-import {
-  AlignLeftOutlined,
-  PictureOutlined,
-  PlusOutlined,
-} from "@ant-design/icons";
+import { ReactSortable } from "react-sortablejs";
 
 const Timeline: React.FC = () => {
   const padding = 2;
@@ -154,15 +156,23 @@ const Timeline: React.FC = () => {
                   transform: "scale(0.75)",
                 }}
               >
-                {index}s
+                {index}
               </div>
             </div>
           ))}
       </div>
-      <VideoTrack />
-      {state.mapTracks.map((i: MapTrackItem) => (
-        <MapTrack key={i.id} mapTrack={i} />
-      ))}
+      {state.tracksSort.map((iObj: any) => {
+        let i = iObj.toString();
+        if (i === "track_video")
+          return <VideoTrack key="track_video" />;
+        else if (i.indexOf("track_map") === 0) {
+          let mapTrack = state.mapTracks.find(
+            (m: MapTrackItem) => m.id === i.split("track_map_").at(-1)
+          ) as MapTrackItem;
+          return <MapTrack key={mapTrack.id} mapTrack={mapTrack} />;
+        }
+        return <></>;
+      })}
       <div
         style={{
           position: "absolute",
@@ -189,8 +199,65 @@ const Timeline: React.FC = () => {
             filter: `drop-shadow(0 0 8px ${token.colorPrimary})`,
             transform: "translateX(-4px)",
           }}
-        ></div>
+        />
       </div>
+      <ReactSortable
+        list={state.tracksSort}
+        setList={(value) => {
+          updateState({ tracksSort: value });
+        }}
+        handle=".sortHandle"
+        animation={150}
+        style={{
+          position: "absolute",
+          top: "20px",
+          left: "2px",
+        }}
+      >
+        {state.tracksSort.map((iObj: string) => {
+          let i = iObj.toString();
+          let icon = <></>;
+          if (i === "track_video")
+            icon = (
+              <VideoCameraOutlined
+                style={{
+                  fontSize: state.timelineCollapsed ? "12px" : "16px",
+                  color: token.colorTextSecondary,
+                }}
+              />
+            );
+          else if (i.indexOf("track_map") === 0)
+            icon = (
+              <PictureOutlined
+                style={{
+                  fontSize: state.timelineCollapsed ? "12px" : "16px",
+                  color: token.colorTextSecondary,
+                }}
+              />
+            );
+          return (
+            <div
+              key={i}
+              style={{
+                boxSizing: "border-box",
+                height: `${state.timelineCollapsed ? 28 : 56}px`,
+                width: `${state.timelineCollapsed ? 28 : 56}px`,
+                marginTop: `${state.timelineCollapsed ? 0 : 18}px`,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <div
+                className="sortHandle"
+                style={{ padding: "8px", cursor: "grab" }}
+              >
+                {icon}
+              </div>
+            </div>
+          );
+        })}
+      </ReactSortable>
     </div>
   );
 };
