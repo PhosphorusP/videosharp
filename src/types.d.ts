@@ -24,5 +24,6 @@ type MapTrackItem = {
 type MapTrackClip = TrackClip & {
   composePos: [number, number];
   composeSize: [number, number];
+  composeRotate: number;
 };
 type AudioTrackItem = { fileName: string };

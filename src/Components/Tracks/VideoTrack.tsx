@@ -18,6 +18,7 @@ const VideoTrack: React.FC = () => {
   });
   const trackId = nanoid();
   const trackHeight = state.timelineCollapsed ? 28 : 56 + 16;
+  let onDrop = isOver && ["video"].indexOf(state.draggingType) >= 0;
   return (
     <div>
       <div
@@ -30,8 +31,8 @@ const VideoTrack: React.FC = () => {
           marginTop: state.timelineCollapsed ? undefined : "4px",
           marginBottom: `-${trackHeight}px`,
           borderRadius: "8px",
-          outline: isOver ? `2px solid ${token.colorPrimary}` : undefined,
-          background: isOver ? token.colorPrimaryBgHover : undefined,
+          outline: onDrop ? `2px solid ${token.colorPrimary}` : undefined,
+          background: onDrop ? token.colorPrimaryBgHover : undefined,
         }}
       />
       <div

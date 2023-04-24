@@ -9,6 +9,8 @@ export function useMediaDrag() {
   const state: any = useSelector((state: any) => state.reducer);
   const [draggingID, setDraggingId] = useState("");
   function handleDragStart(event: DragEndEvent) {
+    const { active } = event;
+    updateState({ draggingType: active.data.current!.type });
     setDraggingId(event.active.id as string);
   }
   function handleDragEnd(event: DragEndEvent) {
@@ -48,9 +50,10 @@ export function useMediaDrag() {
           duration: state.projectFPS * 3,
           composeSize: mediaSize,
           composePos: [
-            (state.projectSize[0] - mediaSize[0]) / 2,
-            (state.projectSize[1] - mediaSize[1]) / 2,
+            Math.floor((state.projectSize[0] - mediaSize[0]) / 2),
+            Math.floor((state.projectSize[1] - mediaSize[1]) / 2),
           ],
+          composeRotate: 0,
         });
         updateState({
           mapTracks,

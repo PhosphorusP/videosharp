@@ -163,8 +163,7 @@ const Timeline: React.FC = () => {
       </div>
       {state.tracksSort.map((iObj: any) => {
         let i = iObj.toString();
-        if (i === "track_video")
-          return <VideoTrack key="track_video" />;
+        if (i === "track_video") return <VideoTrack key="track_video" />;
         else if (i.indexOf("track_map") === 0) {
           let mapTrack = state.mapTracks.find(
             (m: MapTrackItem) => m.id === i.split("track_map_").at(-1)
@@ -207,7 +206,9 @@ const Timeline: React.FC = () => {
           updateState({ tracksSort: value });
         }}
         handle=".sortHandle"
-        animation={150}
+        animation={300}
+        easing="cubic-bezier(0.25, 1, 0.5, 1)"
+        direction="vertical"
         style={{
           position: "absolute",
           top: "20px",
@@ -248,12 +249,14 @@ const Timeline: React.FC = () => {
                 alignItems: "center",
               }}
             >
-              <div
-                className="sortHandle"
-                style={{ padding: "8px", cursor: "grab" }}
-              >
-                {icon}
-              </div>
+              <Popover placement="right" trigger="click" content={<>Hello</>}>
+                <div
+                  className="sortHandle"
+                  style={{ padding: "8px", cursor: "grab", boxShadow: '0 0 8px #000' }}
+                >
+                  {icon}
+                </div>
+              </Popover>
             </div>
           );
         })}

@@ -225,9 +225,10 @@ export const importFiles = async (files: FileList) => {
         duration: state.projectFPS * 3,
         composeSize: scaledMediaSize,
         composePos: [
-          (state.projectSize[0] - scaledMediaSize[0]) / 2,
-          (state.projectSize[1] - scaledMediaSize[1]) / 2,
+          Math.floor((state.projectSize[0] - scaledMediaSize[0]) / 2),
+          Math.floor((state.projectSize[1] - scaledMediaSize[1]) / 2),
         ],
+        composeRotate: 0,
       });
     }
   }
@@ -341,8 +342,7 @@ export const scaleMediaSize: (
     w = tmpw;
     h = tmph;
   }
-  console.log([w, h]);
-  return [w, h];
+  return [Math.floor(w), Math.floor(h)];
 };
 
 export const setCurrentFrame = (frameNum: number) => {
@@ -364,6 +364,7 @@ export const composeFrame = async (
   let ctx = composeCanvas.getContext("2d") as CanvasRenderingContext2D;
   let tracksSort = cloneDeep(state.tracksSort).reverse();
 
+  ctx.save();
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, state.projectSize[0], state.projectSize[1]);
 
@@ -430,17 +431,23 @@ export const composeFrame = async (
           imgObj.onload = res;
           imgObj.src = mediaFile.objectURL;
         });
+        ctx.translate(
+          img.composePos[0] + img.composeSize[0] / 2,
+          img.composePos[1] + img.composeSize[1] / 2
+        );
+        ctx.rotate((img.composeRotate * Math.PI) / 180);
         ctx.drawImage(
           imgObj,
-          img.composePos[0],
-          img.composePos[1],
+          -img.composeSize[0] / 2,
+          -img.composeSize[1] / 2,
           img.composeSize[0],
           img.composeSize[1]
         );
       }
     }
   }
-  if (!forExport && state.currentFrame === frameNum)
+  ctx.restore();
+  if (!forExport && store.getState().reducer.currentFrame === frameNum)
     finalCtx.drawImage(composeCanvas, 0, 0);
 };
 export const composeCurrentFrame = () => {

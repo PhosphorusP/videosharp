@@ -17,6 +17,7 @@ const initialState = {
   undoStack: [],
   redoStack: [],
   tracksSort: ["track_video"],
+  draggingType: "",
 };
 const reducer = (state = initialState, action: any) => {
   switch (action.type) {
