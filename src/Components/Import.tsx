@@ -1,6 +1,6 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { App, theme } from "antd";
-import { useEffect, useState } from "react";
+import { CSSProperties, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { importFiles, updateState } from "../store/action";
 
@@ -36,15 +36,14 @@ const Import: React.FC = () => {
     const dropHandler: any = async (e: DragEvent) => {
       setMask(false);
       e.preventDefault();
-      if(e.dataTransfer &&
-        e.dataTransfer!.effectAllowed !== "move"){
-          let fileCnt =e.dataTransfer.files 
+      if (e.dataTransfer && e.dataTransfer!.effectAllowed !== "move") {
+        let fileCnt = e.dataTransfer.files
           ? await importFiles(e.dataTransfer.files)
           : 0;
-      if (fileCnt) message.success(`已导入${fileCnt}个文件`);
-      else message.error("没有拖入可供导入的文件");
-        }
-      
+        if (fileCnt) message.success(`已导入${fileCnt}个文件`);
+        else message.error("没有拖入可供导入的文件");
+      }
+
       e.preventDefault();
       e.stopPropagation();
     };
@@ -60,21 +59,24 @@ const Import: React.FC = () => {
       document.removeEventListener("drop", dropHandler);
     };
   });
+  const maskStyle: CSSProperties = {
+    zIndex: 20,
+    position: "fixed",
+    left: 0,
+    top: 0,
+    width: "100vw",
+    height: "100vh",
+    backgroundColor: token.colorBgMask,
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+  };
   return (
     <>
       <div
         style={{
+          ...maskStyle,
           display: mask ? "flex" : "none",
-          zIndex: 1,
-          position: "fixed",
-          left: 0,
-          top: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: token.colorBgMask,
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
         }}
       >
         <PlusOutlined
@@ -90,17 +92,8 @@ const Import: React.FC = () => {
       </div>
       <div
         style={{
+          ...maskStyle,
           display: state.importing ? "flex" : "none",
-          zIndex: 1,
-          position: "fixed",
-          left: 0,
-          top: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: token.colorBgMask,
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
         }}
       >
         <div style={{ color: token.colorTextLightSolid, fontSize: "24px" }}>
@@ -110,17 +103,8 @@ const Import: React.FC = () => {
 
       <div
         style={{
+          ...maskStyle,
           display: state.appLoading ? "flex" : "none",
-          zIndex: 1,
-          position: "fixed",
-          left: 0,
-          top: 0,
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: token.colorBgMask,
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
         }}
       >
         <div style={{ color: token.colorTextLightSolid, fontSize: "24px" }}>

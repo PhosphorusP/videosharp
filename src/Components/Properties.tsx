@@ -82,7 +82,15 @@ const MapProperties: React.FC<MapPropertiesProps> = ({
     (i) => i.id === selected!.mediaFileId
   ) as MediaFile;
   const [form] = Form.useForm();
-  form.resetFields();
+  //form.resetFields();
+  const formValues = {
+    ...selected,
+    composeSizeX: selected.composeSize[0],
+    composeSizeY: selected.composeSize[1],
+    composePosX: selected.composePos[0],
+    composePosY: selected.composePos[1],
+  };
+  form.setFieldsValue(formValues);
   return (
     <>
       <SelectedPreview
@@ -93,13 +101,7 @@ const MapProperties: React.FC<MapPropertiesProps> = ({
       <Form
         form={form}
         colon={false}
-        initialValues={{
-          ...selected,
-          composeSizeX: selected.composeSize[0],
-          composeSizeY: selected.composeSize[1],
-          composePosX: selected.composePos[0],
-          composePosY: selected.composePos[1],
-        }}
+        initialValues={formValues}
         onValuesChange={(changed, full) => {
           let mapTracks = state.mapTracks as MapTrackItem[];
           for (let i of mapTracks) {

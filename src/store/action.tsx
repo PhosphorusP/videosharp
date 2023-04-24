@@ -442,6 +442,7 @@ export const composeFrame = async (
           img.composeSize[0],
           img.composeSize[1]
         );
+        ctx.restore();
       }
     }
   }
