@@ -17,13 +17,19 @@ type TrackClip = {
 type VideoTrackClip = TrackClip & {
   mediaOffset: number;
 };
-type MapTrackItem = {
-  id: string;
-  clips: MapTrackClip[];
-};
+type MultiTrackItem = { id: string };
+type MapTrackItem = MultiTrackItem & { clips: MapTrackClip[] };
 type MapTrackClip = TrackClip & {
   composePos: [number, number];
   composeSize: [number, number];
   composeRotate: number;
+};
+type SubtitleTrackItem = MultiTrackItem & { clips: SubtitleTrackClip[] };
+type SubtitleTrackClip = TrackClip & {
+  content: string;
+  composePos: [number, number];
+  fontSize: number;
+  color: string;
+  backgroundColor: string;
 };
 type AudioTrackItem = { fileName: string };

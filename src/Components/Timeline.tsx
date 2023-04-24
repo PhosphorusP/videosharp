@@ -9,6 +9,7 @@ import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import {
   appendMapTrack,
+  appendSubtitleTrack,
   composeCurrentFrame,
   getTracksDuration,
   setCurrentFrame,
@@ -17,6 +18,7 @@ import {
 import MapTrack from "./Tracks/MapTrack";
 import VideoTrack from "./Tracks/VideoTrack";
 import { ReactSortable } from "react-sortablejs";
+import SubtitleTrack from "./Tracks/SubtitleTrack";
 
 const Timeline: React.FC = () => {
   const padding = 2;
@@ -85,7 +87,11 @@ const Timeline: React.FC = () => {
               >
                 贴图轨道
               </Button>
-              <Button type="text" icon={<AlignLeftOutlined />}>
+              <Button
+                type="text"
+                icon={<AlignLeftOutlined />}
+                onClick={appendSubtitleTrack}
+              >
                 字幕轨道
               </Button>
             </>
@@ -169,6 +175,16 @@ const Timeline: React.FC = () => {
             (m: MapTrackItem) => m.id === i.split("track_map_").at(-1)
           ) as MapTrackItem;
           return <MapTrack key={mapTrack.id} mapTrack={mapTrack} />;
+        } else if (i.indexOf("track_subtitle") === 0) {
+          let subtitleTrack = state.subtitleTracks.find(
+            (m: SubtitleTrackItem) => m.id === i.split("track_subtitle_").at(-1)
+          ) as SubtitleTrackItem;
+          return (
+            <SubtitleTrack
+              key={subtitleTrack.id}
+              subtitleTrack={subtitleTrack}
+            />
+          );
         }
         return <></>;
       })}
@@ -236,6 +252,15 @@ const Timeline: React.FC = () => {
                 }}
               />
             );
+          else if (i.indexOf("track_subtitle") === 0)
+            icon = (
+              <AlignLeftOutlined
+                style={{
+                  fontSize: state.timelineCollapsed ? "12px" : "16px",
+                  color: token.colorTextSecondary,
+                }}
+              />
+            );
           return (
             <div
               key={i}
@@ -258,7 +283,7 @@ const Timeline: React.FC = () => {
                     fontSize: "16px",
                     lineHeight: "16px",
                     backgroundColor: token.colorBgContainer,
-                    borderRadius: '4px'
+                    borderRadius: "4px",
                   }}
                 >
                   {icon}

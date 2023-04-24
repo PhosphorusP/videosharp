@@ -1,5 +1,5 @@
-import { EllipsisOutlined } from "@ant-design/icons";
-import { theme } from "antd";
+import { EllipsisOutlined, PlusOutlined } from "@ant-design/icons";
+import { Popover, theme } from "antd";
 import { cloneDeep } from "lodash-es";
 import { useEffect, useState } from "react";
 import { useContextMenu } from "react-contexify";
@@ -7,62 +7,68 @@ import "react-contexify/dist/ReactContexify.css";
 import { useSelector } from "react-redux";
 import {
   alignTracks,
+  formatTimestamp,
   getTrackDuration,
   getTrackStart,
   saveState,
   updateState,
 } from "../../store/action";
+import { nanoid } from "nanoid";
 
-type VideoTrackClipProps = {
-  videoTrackClip: VideoTrackClip;
-  trackId: string;
+type SubtitleTrackClipProps = {
+  subtitleTrack: SubtitleTrackItem;
+  subtitleTrackClip: SubtitleTrackClip;
 };
-const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
-  videoTrackClip,
-  trackId,
-}: VideoTrackClipProps) => {
+const SubtitleTrackClip: React.FC<SubtitleTrackClipProps> = ({
+  subtitleTrack,
+  subtitleTrackClip,
+}: SubtitleTrackClipProps) => {
   const state: any = useSelector((state: any) => state.reducer);
   const [mousePos, setMousePos] = useState([0, 0]);
-  const [tmpVideoTrack, setTmpVideoTrack] = useState([] as VideoTrackClip[]);
+  const [tmpSubtitleTrack, setTmpSubtitleTrack] = useState(
+    {} as SubtitleTrackItem
+  );
   const handleWidth = 8;
   const offsetLeft =
-    videoTrackClip.beginOffset * state.timelineRatio +
+    subtitleTrackClip.beginOffset * state.timelineRatio +
     (state.timelineCollapsed ? 28 : 56);
   const { token } = theme.useToken();
   const clipWidth =
-    (videoTrackClip.duration -
-      (videoTrackClip.beginOffset + (videoTrackClip.duration as number) ===
-      getTrackDuration(state.videoTrack)
+    (subtitleTrackClip.duration -
+      (subtitleTrackClip.beginOffset +
+        (subtitleTrackClip.duration as number) ===
+      getTrackDuration(subtitleTrack.clips)
         ? 1
         : 0)) *
     state.timelineRatio;
   const dragStartHandler = (e: React.MouseEvent, operation: string) => {
     e.stopPropagation();
     setMousePos([e.clientX, e.clientY]);
-    setTmpVideoTrack(state.videoTrack);
+    setTmpSubtitleTrack(subtitleTrack);
     saveState();
     updateState({
-      clipOrigin: `${videoTrackClip.id}_${operation}`,
+      clipOrigin: `${subtitleTrackClip.id}_${operation}`,
     });
   };
   const { show: showContextMenu } = useContextMenu({
-    id: trackId,
+    id: subtitleTrack.id,
   });
   useEffect(() => {
     let mouseMoveHandler: any = (e: React.MouseEvent) => {
-      if (state.clipOrigin === `${videoTrackClip.id}_move`) {
+      if (subtitleTrackClip.id === "new") return;
+      if (state.clipOrigin === `${subtitleTrackClip.id}_move`) {
         e.stopPropagation();
         if (e.buttons) {
-          let videoTrack = cloneDeep(tmpVideoTrack);
-          let currentClip = videoTrack.find(
-            (i) => i.id === videoTrackClip.id
-          ) as VideoTrackClip;
+          let subtitleTrackClips = cloneDeep(tmpSubtitleTrack).clips;
+          let currentClip = subtitleTrackClips.find(
+            (i) => i.id === subtitleTrackClip.id
+          ) as SubtitleTrackClip;
           let offset = [
             Math.round((e.clientX - mousePos[0]) / state.timelineRatio),
             Math.round((e.clientY - mousePos[1]) / state.timelineRatio),
           ];
           if (
-            videoTrack
+            subtitleTrackClips
               .filter((i) => i.id !== currentClip.id)
               .filter(
                 (i) =>
@@ -73,7 +79,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           )
             return;
           currentClip.beginOffset += offset[0];
-          let nextClips = videoTrack.filter(
+          let nextClips = subtitleTrackClips.filter(
             (i) => i.beginOffset > currentClip.beginOffset
           );
           if (nextClips.length) {
@@ -84,25 +90,29 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
               nextClips.map((i) => (i.beginOffset -= nextOffset));
           }
 
+          let subtitleTracks = cloneDeep(
+            state.subtitleTracks
+          ) as SubtitleTrackItem[];
+          subtitleTracks.find((i) => i.id === subtitleTrack.id)!.clips =
+            subtitleTrackClips;
           updateState({
-            videoTrack,
+            subtitleTracks,
           });
         }
-      } else if (state.clipOrigin === `${videoTrackClip.id}_clip_l`) {
+      } else if (state.clipOrigin === `${subtitleTrackClip.id}_clip_l`) {
         e.stopPropagation();
         if (e.buttons) {
-          let videoTrack = cloneDeep(tmpVideoTrack);
-          let currentClip = videoTrack.find(
-            (i) => i.id === videoTrackClip.id
-          ) as VideoTrackClip;
+          let subtitleTrackClips = cloneDeep(tmpSubtitleTrack).clips;
+          let currentClip = subtitleTrackClips.find(
+            (i) => i.id === subtitleTrackClip.id
+          ) as SubtitleTrackClip;
           let offset = [
             Math.round((e.clientX - mousePos[0]) / state.timelineRatio),
             Math.round((e.clientY - mousePos[1]) / state.timelineRatio),
           ];
           if (
-            currentClip.mediaOffset + offset[0] < 0 ||
             offset[0] > currentClip.duration - handleWidth * 3 ||
-            videoTrack.filter(
+            subtitleTrackClips.filter(
               (i) =>
                 i.beginOffset < currentClip.beginOffset &&
                 i.beginOffset + i.duration - 1 >=
@@ -111,34 +121,31 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           )
             return;
           currentClip.beginOffset += offset[0];
-          currentClip.mediaOffset += offset[0];
           currentClip.duration -= offset[0];
+
+          let subtitleTracks = cloneDeep(
+            state.subtitleTracks
+          ) as SubtitleTrackItem[];
+          subtitleTracks.find((i) => i.id === subtitleTrack.id)!.clips =
+            subtitleTrackClips;
           updateState({
-            videoTrack,
+            subtitleTracks,
           });
         }
-      } else if (state.clipOrigin === `${videoTrackClip.id}_clip_r`) {
+      } else if (state.clipOrigin === `${subtitleTrackClip.id}_clip_r`) {
         e.stopPropagation();
         if (e.buttons) {
-          let videoTrack = cloneDeep(tmpVideoTrack);
-          let currentClip = videoTrack.find(
-            (i) => i.id === videoTrackClip.id
-          ) as VideoTrackClip;
+          let subtitleTrackClips = cloneDeep(tmpSubtitleTrack).clips;
+          let currentClip = subtitleTrackClips.find(
+            (i) => i.id === subtitleTrackClip.id
+          ) as SubtitleTrackClip;
           let offset = [
             Math.round((e.clientX - mousePos[0]) / state.timelineRatio),
             Math.round((e.clientY - mousePos[1]) / state.timelineRatio),
           ];
-          let mediaFile = (state.mediaFiles as MediaFile[]).find(
-            (i: MediaFile) => i.id === currentClip.mediaFileId
-          )!;
-          if (
-            currentClip.duration + offset[0] < handleWidth * 3 ||
-            currentClip.mediaOffset + currentClip.duration + offset[0] >
-              mediaFile.duration
-          )
-            return;
+          if (currentClip.duration + offset[0] < handleWidth * 3) return;
           currentClip.duration += offset[0];
-          let nextClips = videoTrack.filter(
+          let nextClips = subtitleTrackClips.filter(
             (i) => i.beginOffset > currentClip.beginOffset
           );
           if (nextClips.length) {
@@ -148,8 +155,13 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
             if (nextOffset < 0)
               nextClips.map((i) => (i.beginOffset -= nextOffset));
           }
+          let subtitleTracks = cloneDeep(
+            state.subtitleTracks
+          ) as SubtitleTrackItem[];
+          subtitleTracks.find((i) => i.id === subtitleTrack.id)!.clips =
+            subtitleTrackClips;
           updateState({
-            videoTrack,
+            subtitleTracks,
           });
         }
       }
@@ -158,9 +170,9 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
     let mouseUpHandler: any = () => {
       if (
         [
-          `${videoTrackClip.id}_move`,
-          `${videoTrackClip.id}_clip_l`,
-          `${videoTrackClip.id}_clip_r`,
+          `${subtitleTrackClip.id}_move`,
+          `${subtitleTrackClip.id}_clip_l`,
+          `${subtitleTrackClip.id}_clip_r`,
         ].indexOf(state.clipOrigin) >= 0
       ) {
         alignTracks();
@@ -195,15 +207,13 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
             color: token.colorTextSecondary,
           }}
         >
-          {
-            state.mediaFiles.find(
-              (i: MediaFile) => i.id === videoTrackClip.mediaFileId
-            ).fileName
-          }
+          {subtitleTrackClip.id === "new" || subtitleTrackClip.beginOffset < 0
+            ? undefined
+            : formatTimestamp(subtitleTrackClip.beginOffset, state.projectFPS)}
         </div>
       )}
       <div
-        key={videoTrackClip.id}
+        key={subtitleTrackClip.id}
         style={{
           position: "absolute",
           top: state.timelineCollapsed ? 0 : "16px",
@@ -212,36 +222,39 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           display: "inline-block",
           boxSizing: "border-box",
           boxShadow:
-            state.selectedId === videoTrackClip.id && !state.timelineCollapsed
+            state.selectedId === subtitleTrackClip.id &&
+            !state.timelineCollapsed
               ? `0 4px 0 ${handleColor} inset, 0 -4px 0 ${handleColor} inset`
               : undefined,
           height: state.timelineCollapsed ? "28px" : "56px",
           width: `${clipWidth}px`,
-          backgroundImage: `url(${
-            state.mediaFiles.find(
-              (i: MediaFile) => i.id === videoTrackClip.mediaFileId
-            ).thumbnailDataUrl
-          })`,
-          backgroundRepeat: "repeat-x",
-          backgroundSize: "auto 100%",
-          backgroundPosition: "left center",
+          background:
+            subtitleTrackClip.id === "new"
+              ? token.colorFillSecondary
+              : "linear-gradient(#9254de, #722ed1)",
           borderRadius: "8px",
+          padding: "0 4px",
+          lineHeight: state.timelineCollapsed ? "28px" : "56px",
+          color: token.colorTextLightSolid,
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
         }}
         onMouseDown={(e) => {
+          if (subtitleTrackClip.id === "new") return;
           e.stopPropagation();
           dragStartHandler(e, "move");
           updateState({
-            selectedId: videoTrackClip.id,
+            selectedId: subtitleTrackClip.id,
           });
         }}
         onContextMenu={(e) =>
-          showContextMenu({ event: e, props: { id: videoTrackClip.id } })
+          showContextMenu({ event: e, props: { id: subtitleTrackClip.id } })
         }
-      />
-      {state.selectedId === videoTrackClip.id ? (
+      >
+        {subtitleTrackClip.content}
+      </div>
+      {state.selectedId === subtitleTrackClip.id ? (
         <>
           <div
             style={{
@@ -322,7 +335,51 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
           />
         </>
       ) : undefined}
+      {subtitleTrackClip.id === "new" ? (
+        <Popover content="添加新字幕">
+          <div
+            style={{
+              position: "absolute",
+              top: state.timelineCollapsed ? 0 : "20px",
+              left: `${offsetLeft}px`,
+              display: "inline-flex",
+              justifyContent: "center",
+              alignItems: "center",
+              boxSizing: "border-box",
+              height: state.timelineCollapsed ? "28px" : "52px",
+              width: `${clipWidth}px`,
+              borderRadius: "8px",
+              zIndex: 1,
+            }}
+            onClick={() => {
+              let tmpSubtitleTracks = cloneDeep(
+                state.subtitleTracks
+              ) as SubtitleTrackItem[];
+              let tmpSubtitleTrack = tmpSubtitleTracks.find(
+                (i) => i.id === subtitleTrack.id
+              ) as SubtitleTrackItem;
+              tmpSubtitleTrack.clips.push({
+                id: nanoid(),
+                mediaFileId: "",
+                beginOffset: getTrackDuration(subtitleTrack.clips),
+                duration: state.projectFPS * 1,
+                composePos: [8, 8],
+                content: "选中以替换字幕内容",
+                fontSize: 32,
+                color: "#222",
+                backgroundColor: "",
+              } as SubtitleTrackClip);
+              saveState();
+              updateState({ subtitleTracks: tmpSubtitleTracks });
+            }}
+          >
+            <PlusOutlined
+              style={{ fontSize: state.timelineCollapsed ? "12px" : "18px" }}
+            />
+          </div>
+        </Popover>
+      ) : undefined}
     </>
   );
 };
-export default VideoTrackClip;
+export default SubtitleTrackClip;

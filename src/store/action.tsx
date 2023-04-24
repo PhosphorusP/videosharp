@@ -104,6 +104,8 @@ export const getTracksDuration = () => {
   durations.push(getTrackDuration(state.videoTrack));
   for (let mapTrack of state.mapTracks as MapTrackItem[])
     durations.push(getTrackDuration(mapTrack.clips));
+  for (let subtitleTrack of state.subtitleTracks as SubtitleTrackItem[])
+    durations.push(getTrackDuration(subtitleTrack.clips));
   return max(durations) as number;
 };
 export const getTrackStart = (track: TrackClip[]) =>
@@ -246,6 +248,7 @@ export const deleteClip = (id: string) => {
   let state = store.getState().reducer;
   let videoTrack = cloneDeep(state.videoTrack) as VideoTrackClip[];
   let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
+  let subtitleTracks = cloneDeep(state.subtitleTracks) as SubtitleTrackItem[];
   if (videoTrack.findIndex((i) => i.id === id) >= 0)
     videoTrack.splice(
       videoTrack.findIndex((i) => i.id === id),
@@ -257,9 +260,17 @@ export const deleteClip = (id: string) => {
         mapTrack.clips.findIndex((i) => i.id === id),
         1
       );
+  for (let subtitleTrack of subtitleTracks)
+    if (subtitleTrack.clips.findIndex((i) => i.id === id) >= 0)
+      subtitleTrack.clips.splice(
+        subtitleTrack.clips.findIndex((i) => i.id === id),
+        1
+      );
+  saveState();
   updateState({
     videoTrack,
     mapTracks,
+    subtitleTracks,
     selectedId: "",
   });
 };
@@ -281,20 +292,43 @@ export const appendMapTrack = () => {
   });
 };
 
+export const appendSubtitleTrack = () => {
+  const subtitleTracks = cloneDeep(
+    store.getState().reducer.subtitleTracks
+  ) as SubtitleTrackItem[];
+  const tracksSort = cloneDeep(store.getState().reducer.tracksSort) as string[];
+  let id = nanoid();
+  subtitleTracks.push({
+    id: id,
+    clips: [] as SubtitleTrackClip[],
+  } as SubtitleTrackItem);
+  tracksSort.unshift(`track_subtitle_${id}`);
+  updateState({
+    subtitleTracks,
+    tracksSort,
+  });
+};
+
 export const alignTracks = () => {
   let state = store.getState().reducer;
   let videoTrack = cloneDeep(state.videoTrack) as VideoTrackClip[];
   let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
+  let subtitleTracks = cloneDeep(state.subtitleTracks) as SubtitleTrackItem[];
   let starts = [] as number[];
   if (videoTrack.length) starts.push(getTrackStart(videoTrack));
   for (let mapTrack of mapTracks)
     if (mapTrack.clips.length) starts.push(getTrackStart(mapTrack.clips));
+  for (let subtitleTrack of subtitleTracks)
+    if (subtitleTrack.clips.length)
+      starts.push(getTrackStart(subtitleTrack.clips));
   let start = min(starts) as number;
   for (let i of videoTrack) i.beginOffset -= start;
   for (let i of mapTracks) for (let j of i.clips) j.beginOffset -= start;
+  for (let i of subtitleTracks) for (let j of i.clips) j.beginOffset -= start;
   updateState({
     videoTrack,
     mapTracks,
+    subtitleTracks,
   });
 };
 

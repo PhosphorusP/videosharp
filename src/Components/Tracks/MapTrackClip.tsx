@@ -87,7 +87,7 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
           let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
           mapTracks.find((i) => i.id === mapTrack.id)!.clips = mapTrackClips;
           updateState({
-            mapTracks: mapTracks,
+            mapTracks,
           });
         }
       } else if (state.clipOrigin === `${mapTrackClip.id}_clip_l`) {
@@ -102,7 +102,7 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
             Math.round((e.clientY - mousePos[1]) / state.timelineRatio),
           ];
           if (
-            offset[0] > currentClip.duration - handleWidth * 4 ||
+            offset[0] > currentClip.duration - handleWidth * 3 ||
             mapTrackClips.filter(
               (i) =>
                 i.beginOffset < currentClip.beginOffset &&
@@ -117,7 +117,7 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
           let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
           mapTracks.find((i) => i.id === mapTrack.id)!.clips = mapTrackClips;
           updateState({
-            mapTracks: mapTracks,
+            mapTracks,
           });
         }
       } else if (state.clipOrigin === `${mapTrackClip.id}_clip_r`) {
@@ -131,10 +131,7 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
             Math.round((e.clientX - mousePos[0]) / state.timelineRatio),
             Math.round((e.clientY - mousePos[1]) / state.timelineRatio),
           ];
-          let mediaFile = (state.mediaFiles as MediaFile[]).find(
-            (i: MediaFile) => i.id === currentClip.mediaFileId
-          )!;
-          if (currentClip.duration + offset[0] < handleWidth * 4) return;
+          if (currentClip.duration + offset[0] < handleWidth * 3) return;
           currentClip.duration += offset[0];
           let nextClips = mapTrackClips.filter(
             (i) => i.beginOffset > currentClip.beginOffset
@@ -149,7 +146,7 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
           let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
           mapTracks.find((i) => i.id === mapTrack.id)!.clips = mapTrackClips;
           updateState({
-            mapTracks: mapTracks,
+            mapTracks,
           });
         }
       }
@@ -240,7 +237,7 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
         onContextMenu={(e) =>
           showContextMenu({ event: e, props: { id: mapTrackClip.id } })
         }
-      ></div>
+      />
       {state.selectedId === mapTrackClip.id ? (
         <>
           <div
@@ -257,7 +254,7 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
               borderRadius: "8px",
               zIndex: 1,
             }}
-          ></div>
+          />
           <div
             style={{
               position: "absolute",

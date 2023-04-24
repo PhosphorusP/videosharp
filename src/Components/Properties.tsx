@@ -1,6 +1,6 @@
 import { Button, Form, InputNumber } from "antd";
 import { useSelector } from "react-redux";
-import { formatTimestamp, updateState } from "../store/action";
+import { formatTimestamp, saveState, updateState } from "../store/action";
 import SelectedPreview from "./SelectedPreview";
 import { flattenDeep } from "lodash-es";
 
@@ -110,6 +110,7 @@ const MapProperties: React.FC<MapPropertiesProps> = ({
               clip.composeSize = [full["composeSizeX"], full["composeSizeY"]];
               clip.composePos = [full["composePosX"], full["composePosY"]];
               clip.composeRotate = full["composeRotate"];
+              saveState();
               updateState({ mapTracks });
               break;
             }
