@@ -2,7 +2,7 @@ import { theme } from "antd";
 import { cloneDeep } from "lodash-es";
 import { CSSProperties, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { updateState } from "../store/action";
+import { saveState, updateState } from "../store/action";
 
 function rotate(cx: number, cy: number, x: number, y: number, angle: number) {
   var radians = (Math.PI / 180) * angle,
@@ -96,6 +96,7 @@ const MapTransform: React.FC<MapTransformProps> = ({
     ) as [number, number];
   };
   const changeStartHandler = (anchor: string, e?: any) => {
+    saveState();
     setAnchor(anchor);
     if (anchor === "rotate") return;
 
