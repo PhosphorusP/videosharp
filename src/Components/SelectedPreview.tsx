@@ -13,7 +13,9 @@ const SelectedPreview: React.FC<SelectedPreviewProps> = ({
 }: SelectedPreviewProps) => {
   const { token } = theme.useToken();
   return (
-    <div style={{ display: "flex", alignItems: "center", marginBottom: '16px' }}>
+    <div
+      style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}
+    >
       <div
         style={{
           width: "80px",

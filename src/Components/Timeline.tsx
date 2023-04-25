@@ -12,6 +12,7 @@ import {
   appendSubtitleTrack,
   composeCurrentFrame,
   getTracksDuration,
+  saveState,
   setCurrentFrame,
   updateState,
 } from "../store/action";
@@ -162,7 +163,7 @@ const Timeline: React.FC = () => {
                   transform: "scale(0.75)",
                 }}
               >
-                {index}
+                {index}s
               </div>
             </div>
           ))}
@@ -219,6 +220,7 @@ const Timeline: React.FC = () => {
       <ReactSortable
         list={state.tracksSort}
         setList={(value) => {
+          saveState();
           updateState({ tracksSort: value });
         }}
         handle=".sortHandle"
@@ -274,7 +276,15 @@ const Timeline: React.FC = () => {
                 alignItems: "center",
               }}
             >
-              <Popover placement="right" trigger="click" content={<>Hello</>}>
+              <Popover
+                placement="right"
+                trigger="click"
+                content={
+                  <>
+                    <Button type="text" size="small" danger>删除轨道</Button>
+                  </>
+                }
+              >
                 <div
                   className="sortHandle"
                   style={{

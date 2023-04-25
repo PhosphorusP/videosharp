@@ -2,7 +2,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import { App, theme } from "antd";
 import { CSSProperties, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { importFiles, updateState } from "../store/action";
+import { importFiles } from "../store/action";
 
 const Import: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);

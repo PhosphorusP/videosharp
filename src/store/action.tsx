@@ -43,6 +43,7 @@ export const saveState = () => {
     mediaFiles,
     videoTrack,
     subtitleTracks,
+    tracksSort,
     mapTracks,
     selectedId,
   } = cloneDeep(state);
@@ -50,6 +51,7 @@ export const saveState = () => {
     mediaFiles,
     videoTrack,
     subtitleTracks,
+    tracksSort,
     mapTracks,
     selectedId,
   });
@@ -273,6 +275,7 @@ export const deleteClip = (id: string) => {
     subtitleTracks,
     selectedId: "",
   });
+  alignTracks();
 };
 
 export const appendMapTrack = () => {
@@ -479,6 +482,26 @@ export const composeFrame = async (
           img.composeSize[1]
         );
       }
+    } else if (trackId.indexOf("track_subtitle_") === 0) {
+      let subtitleTracks = state.subtitleTracks as SubtitleTrackItem[];
+      let subtitleTrack = subtitleTracks.find(
+        (i) => i.id === trackId.split("track_subtitle_").at(-1)
+      ) as SubtitleTrackItem;
+      let subtitle = subtitleTrack.clips.find(
+        (i) =>
+          frameNum >= i.beginOffset &&
+          frameNum <= i.beginOffset + i.duration - 1
+      ) as SubtitleTrackClip;
+      if (subtitle) {
+        ctx.font = `${subtitle.fontSize}px  sans-serif`;
+        ctx.textBaseline = "top";
+        ctx.fillStyle = subtitle.color;
+        ctx.fillText(
+          subtitle.content,
+          subtitle.composePos[0],
+          subtitle.composePos[1]
+        );
+      }
     }
   }
   if (!forExport && store.getState().reducer.currentFrame === frameNum)
@@ -515,7 +538,7 @@ export const exportVideo = async () => {
     height: state.projectSize[1],
     bitrate: 1e6,
   });
-  let canvas = document.createElement("canvas"); //document.getElementById("canvas") as HTMLCanvasElement;
+  let canvas = document.createElement("canvas");
   canvas.width = state.projectSize[0];
   canvas.height = state.projectSize[1];
   for (let i = 0; i < trackDuration; i++) {
@@ -538,7 +561,7 @@ export const exportVideo = async () => {
   videoTrack.sort((a, b) => a.beginOffset - b.beginOffset);
   let audioTrackArr = [];
   for (let i = 0; i < videoTrack.length; i++) {
-    // insert silent between videos
+    // insert silence between videos
     if (
       i > 0 &&
       videoTrack[i].beginOffset >

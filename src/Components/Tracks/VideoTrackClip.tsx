@@ -46,7 +46,7 @@ const VideoTrackClip: React.FC<VideoTrackClipProps> = ({
     });
   };
   const { show: showContextMenu } = useContextMenu({
-    id: trackId,
+    id: "contextmenu_clips",
   });
   useEffect(() => {
     let mouseMoveHandler: any = (e: React.MouseEvent) => {

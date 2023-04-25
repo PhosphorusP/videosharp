@@ -5,7 +5,7 @@ import {
 } from "@ant-design/icons";
 import { DndContext, DragOverlay } from "@dnd-kit/core";
 import { Button, theme } from "antd";
-import { useEffect } from "react";
+import { CSSProperties, useEffect } from "react";
 import { useSelector } from "react-redux";
 import "./App.css";
 import Import from "./Components/Import";
@@ -17,7 +17,8 @@ import PreviewBottom from "./Components/PreviewBottom";
 import Properties from "./Components/Properties";
 import Timeline from "./Components/Timeline";
 import { useMediaDrag } from "./hooks/useMediaDrag";
-import { exportVideo, initFF } from "./store/action";
+import { deleteClip, exportVideo, initFF } from "./store/action";
+import { Item, Menu } from "react-contexify";
 
 function App() {
   const { token } = theme.useToken();
@@ -93,7 +94,7 @@ function App() {
           </div>
           <div
             style={{
-              width: "256px",
+              width: "300px",
             }}
           >
             <PanelHeader label={<>属性</>} icon={<BarsOutlined />} />
@@ -130,6 +131,19 @@ function App() {
           })()}
         </DragOverlay>
       </DndContext>
+      <Menu
+        id="contextmenu_clips"
+        theme={state.darkMode ? "dark" : "light"}
+        style={
+          {
+            "--contexify-activeItem-bgColor": token.colorPrimary,
+            "--contexify-activeItem-color": token.colorTextLightSolid,
+            "--contexify-menu-shadow": "0 0 8px rgba(0,0,0,0.2)",
+          } as CSSProperties
+        }
+      >
+        <Item onClick={(e) => deleteClip(e.props.id)}>删除此片段</Item>
+      </Menu>
     </div>
   );
 }

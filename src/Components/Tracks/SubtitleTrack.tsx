@@ -1,8 +1,5 @@
-import { theme } from "antd";
-import { CSSProperties } from "react";
-import { Item, Menu } from "react-contexify";
 import { useSelector } from "react-redux";
-import { deleteClip, getTrackDuration } from "../../store/action";
+import { getTrackDuration } from "../../store/action";
 import SubtitleTrackClip from "./SubtitleTrackClip";
 
 type SubtitleTrackProps = {
@@ -13,7 +10,6 @@ const SubtitleTrack: React.FC<SubtitleTrackProps> = ({
   subtitleTrack,
 }: SubtitleTrackProps) => {
   const state: any = useSelector((state: any) => state.reducer);
-  const { token } = theme.useToken();
   const trackHeight = state.timelineCollapsed ? 28 : 56 + 16;
   return (
     <div>
@@ -43,24 +39,10 @@ const SubtitleTrack: React.FC<SubtitleTrackProps> = ({
               content: "",
               fontSize: 0,
               color: "",
-              backgroundColor: "",
             } as SubtitleTrackClip
           }
         />
       </div>
-      <Menu
-        id={subtitleTrack.id}
-        theme={state.darkMode ? "dark" : "light"}
-        style={
-          {
-            "--contexify-activeItem-bgColor": token.colorPrimary,
-            "--contexify-activeItem-color": token.colorTextLightSolid,
-            "--contexify-menu-shadow": "0 0 8px rgba(0,0,0,0.2)",
-          } as CSSProperties
-        }
-      >
-        <Item onClick={(e) => deleteClip(e.props.id)}>删除此片段</Item>
-      </Menu>
     </div>
   );
 };

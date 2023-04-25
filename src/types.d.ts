@@ -30,6 +30,5 @@ type SubtitleTrackClip = TrackClip & {
   composePos: [number, number];
   fontSize: number;
   color: string;
-  backgroundColor: string;
 };
 type AudioTrackItem = { fileName: string };

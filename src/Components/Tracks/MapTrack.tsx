@@ -1,9 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import { theme } from "antd";
-import { CSSProperties } from "react";
-import { Item, Menu } from "react-contexify";
 import { useSelector } from "react-redux";
-import { deleteClip } from "../../store/action";
 import MapTrackClip from "./MapTrackClip";
 
 type MapTrackProps = {
@@ -52,19 +49,6 @@ const MapTrack: React.FC<MapTrackProps> = ({ mapTrack }: MapTrackProps) => {
           />
         ))}
       </div>
-      <Menu
-        id={mapTrack.id}
-        theme={state.darkMode ? "dark" : "light"}
-        style={
-          {
-            "--contexify-activeItem-bgColor": token.colorPrimary,
-            "--contexify-activeItem-color": token.colorTextLightSolid,
-            "--contexify-menu-shadow": "0 0 8px rgba(0,0,0,0.2)",
-          } as CSSProperties
-        }
-      >
-        <Item onClick={(e) => deleteClip(e.props.id)}>删除此片段</Item>
-      </Menu>
     </div>
   );
 };

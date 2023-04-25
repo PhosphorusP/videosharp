@@ -46,7 +46,7 @@ const MapTrackClip: React.FC<MapTrackClipProps> = ({
     });
   };
   const { show: showContextMenu } = useContextMenu({
-    id: mapTrack.id,
+    id: "contextmenu_clips",
   });
   useEffect(() => {
     let mouseMoveHandler: any = (e: React.MouseEvent) => {

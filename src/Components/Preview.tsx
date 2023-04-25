@@ -1,7 +1,5 @@
-import { Button, Space } from "antd";
-import { useSelector } from "react-redux";
-import { exportVideo } from "../store/action";
 import { useRef } from "react";
+import { useSelector } from "react-redux";
 import MapTransform from "./MapTransform";
 
 const Preview: React.FC = () => {
@@ -29,7 +27,7 @@ const Preview: React.FC = () => {
           alignItems: "center",
           overflow: "hidden",
           padding: "8px",
-          position: 'relative'
+          position: "relative",
         }}
       >
         <canvas

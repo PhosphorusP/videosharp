@@ -51,7 +51,7 @@ const SubtitleTrackClip: React.FC<SubtitleTrackClipProps> = ({
     });
   };
   const { show: showContextMenu } = useContextMenu({
-    id: subtitleTrack.id,
+    id: "contextmenu_clips",
   });
   useEffect(() => {
     let mouseMoveHandler: any = (e: React.MouseEvent) => {
@@ -336,7 +336,7 @@ const SubtitleTrackClip: React.FC<SubtitleTrackClipProps> = ({
         </>
       ) : undefined}
       {subtitleTrackClip.id === "new" ? (
-        <Popover content="添加新字幕">
+        <Popover content="添加字幕片段">
           <div
             style={{
               position: "absolute",
@@ -358,17 +358,30 @@ const SubtitleTrackClip: React.FC<SubtitleTrackClipProps> = ({
               let tmpSubtitleTrack = tmpSubtitleTracks.find(
                 (i) => i.id === subtitleTrack.id
               ) as SubtitleTrackItem;
-              tmpSubtitleTrack.clips.push({
-                id: nanoid(),
-                mediaFileId: "",
-                beginOffset: getTrackDuration(subtitleTrack.clips),
-                duration: state.projectFPS * 1,
-                composePos: [8, 8],
-                content: "选中以替换字幕内容",
-                fontSize: 32,
-                color: "#222",
-                backgroundColor: "",
-              } as SubtitleTrackClip);
+              if (tmpSubtitleTrack.clips.length) {
+                tmpSubtitleTrack.clips.push({
+                  ...tmpSubtitleTrack.clips.reduce(
+                    (a, b) => (a.beginOffset > b.beginOffset ? a : b),
+                    tmpSubtitleTrack.clips[0]
+                  ),
+                  id: nanoid(),
+                  beginOffset: getTrackDuration(subtitleTrack.clips),
+                  duration: state.projectFPS * 1,
+                  content: "选中以替换字幕内容",
+                });
+              } else
+                tmpSubtitleTrack.clips.push({
+                  id: nanoid(),
+                  mediaFileId: "",
+                  beginOffset: getTrackDuration(subtitleTrack.clips),
+                  duration: state.projectFPS * 1,
+                  composePos: [8, 8],
+                  composeRotate: 0,
+                  content: "选中以替换字幕内容",
+                  fontSize: 24,
+                  color: "#FFF",
+                  backgroundColor: "#007AFF",
+                } as SubtitleTrackClip);
               saveState();
               updateState({ subtitleTracks: tmpSubtitleTracks });
             }}

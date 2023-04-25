@@ -1,15 +1,21 @@
-import { Button, Form, InputNumber } from "antd";
+import { Button, Form, Input, InputNumber } from "antd";
+import { flattenDeep } from "lodash-es";
+import { useState } from "react";
+import { CompactPicker } from "react-color";
 import { useSelector } from "react-redux";
 import { formatTimestamp, saveState, updateState } from "../store/action";
 import SelectedPreview from "./SelectedPreview";
-import { flattenDeep } from "lodash-es";
 
 const Properties: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
   return (
     <div style={{ padding: "8px" }}>
       {(() => {
-        let selected: VideoTrackClip | MapTrackClip | undefined;
+        let selected:
+          | VideoTrackClip
+          | MapTrackClip
+          | SubtitleTrackClip
+          | undefined;
         selected = (state.videoTrack as VideoTrackClip[]).find(
           (i) => i.id === state.selectedId
         );
@@ -20,6 +26,12 @@ const Properties: React.FC = () => {
           ) as MapTrackClip[]
         ).find((i) => i.id === state.selectedId) as MapTrackClip;
         if (selected) return <MapProperties selected={selected} />;
+        selected = (
+          flattenDeep(
+            (state.subtitleTracks as SubtitleTrackItem[]).map((i) => i.clips)
+          ) as SubtitleTrackClip[]
+        ).find((i) => i.id === state.selectedId) as SubtitleTrackClip;
+        if (selected) return <SubtitleProperties selected={selected} />;
         return (
           <>
             <Form>
@@ -82,7 +94,6 @@ const MapProperties: React.FC<MapPropertiesProps> = ({
     (i) => i.id === selected!.mediaFileId
   ) as MediaFile;
   const [form] = Form.useForm();
-  //form.resetFields();
   const formValues = {
     ...selected,
     composeSizeX: selected.composeSize[0],
@@ -169,6 +180,100 @@ const MapProperties: React.FC<MapPropertiesProps> = ({
             controls={false}
             addonAfter="°"
             style={{ width: "80px" }}
+          />
+        </Form.Item>
+      </Form>
+    </>
+  );
+};
+
+type SubtitlePropertiesProps = {
+  selected: SubtitleTrackClip;
+};
+
+const SubtitleProperties: React.FC<SubtitlePropertiesProps> = ({
+  selected,
+}: SubtitlePropertiesProps) => {
+  const state: any = useSelector((state: any) => state.reducer);
+  const [form] = Form.useForm();
+  const [color, setColor] = useState(selected.color);
+  const formValues = {
+    ...selected,
+    color,
+    composePosX: selected.composePos[0],
+    composePosY: selected.composePos[1],
+  };
+  form.setFieldsValue(formValues);
+  return (
+    <>
+      <Form
+        form={form}
+        colon={false}
+        initialValues={formValues}
+        onValuesChange={(changed, full) => {
+          let subtitleTracks = state.subtitleTracks as SubtitleTrackItem[];
+          for (let i of subtitleTracks) {
+            let clip = i.clips.find((i) => i.id === selected!.id);
+            if (clip) {
+              clip.content = full["content"];
+              clip.composePos = [full["composePosX"], full["composePosY"]];
+              clip.fontSize = full["fontSize"];
+              if (full["color"]["hex"]) clip.color = full["color"].hex;
+              saveState();
+              updateState({ subtitleTracks });
+              break;
+            }
+          }
+        }}
+      >
+        <Form.Item label="入点">
+          {formatTimestamp(selected!.beginOffset, state.projectFPS)}
+        </Form.Item>
+        <Form.Item label="出点">
+          {formatTimestamp(
+            selected!.beginOffset + selected!.duration,
+            state.projectFPS
+          )}
+        </Form.Item>
+        <Form.Item label="内容" name="content">
+          <Input />
+        </Form.Item>
+        <Form.Item label="位置">
+          <Form.Item name="composePosX" noStyle>
+            <InputNumber
+              keyboard={false}
+              controls={false}
+              addonAfter="像素"
+              style={{ width: "80px", marginRight: "8px" }}
+            />
+          </Form.Item>
+          <Form.Item name="composePosY" noStyle>
+            <InputNumber
+              keyboard={false}
+              controls={false}
+              addonAfter="像素"
+              style={{ width: "80px" }}
+            />
+          </Form.Item>
+        </Form.Item>
+        <Form.Item label="字号" name="fontSize">
+          <InputNumber
+            keyboard={false}
+            controls={false}
+            addonAfter="像素"
+            style={{ width: "80px", marginRight: "8px" }}
+          />
+        </Form.Item>
+        <Form.Item label="颜色" name="color" valuePropName="color">
+          <CompactPicker
+            color={
+              (formValues.color as any).hex
+                ? (formValues.color as any).hex
+                : formValues.color
+            }
+            onChange={(value) => {
+              setColor(value.hex);
+            }}
           />
         </Form.Item>
       </Form>
