@@ -4,10 +4,19 @@ import {
   LoadingOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { App, Button, Modal, Progress, Space, theme } from "antd";
+import {
+  App,
+  Button,
+  Form,
+  InputNumber,
+  Modal,
+  Progress,
+  Space,
+  theme,
+} from "antd";
 import { CSSProperties, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { getFiles, importFiles } from "../store/action";
+import { getFiles, importFiles, updateState } from "../store/action";
 import FFMpegLogs from "./FFMpegLogs";
 
 const Import: React.FC = () => {
@@ -16,6 +25,10 @@ const Import: React.FC = () => {
   const { token } = theme.useToken();
   const { message } = App.useApp();
   const [mask, setMask] = useState(false);
+  const [projectSizeX, setProjectSizeX] = useState(640);
+  const [projectSizeY, setProjectSizeY] = useState(360);
+  const [projectFPS, setProjectFPS] = useState(30);
+  const [initOpen, setInitOpen] = useState(true);
   useEffect(() => {
     const defaultHandler: EventListener = (e: Event) => e.preventDefault();
     document.addEventListener("dragleave", defaultHandler);
@@ -151,7 +164,6 @@ const Import: React.FC = () => {
         </Space>
         <FFMpegLogs />
       </Modal>
-
       <Modal
         width={420}
         open={state.exporting}
@@ -212,6 +224,48 @@ const Import: React.FC = () => {
           </div>
         </Space>
         <FFMpegLogs />
+      </Modal>
+      <Modal
+        title="新建工程"
+        width={200}
+        open={initOpen}
+        closable={false}
+        keyboard={false}
+        maskClosable={false}
+        footer={
+          <Button
+            onClick={() => {
+              updateState({
+                projectSize: [projectSizeX, projectSizeY],
+                projectFPS: 30,
+              });
+              setInitOpen(false);
+            }}
+          >
+            完成
+          </Button>
+        }
+      >
+        <Form colon={false} labelCol={{ span: 8 }} style={{ margin: "16px 0" }}>
+          <Form.Item label="画面宽度">
+            <InputNumber
+              value={projectSizeX}
+              onChange={(value) => setProjectSizeX(value as number)}
+            />
+          </Form.Item>
+          <Form.Item label="画面高度">
+            <InputNumber
+              value={projectSizeY}
+              onChange={(value) => setProjectSizeY(value as number)}
+            />
+          </Form.Item>
+          <Form.Item label="帧速率">
+            <InputNumber
+              value={projectFPS}
+              onChange={(value) => setProjectFPS(value as number)}
+            />
+          </Form.Item>
+        </Form>
       </Modal>
     </>
   );
