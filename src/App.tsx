@@ -54,18 +54,12 @@ function App() {
               width: "200px",
               boxSizing: "border-box",
               borderRight: `1px solid ${token.colorBorderSecondary}`,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
+              overflowY: "scroll",
             }}
           >
             <PanelHeader label={<>媒体文件</>} icon={<FileOutlined />} />
-            <div
-              style={{ flex: "1", overflowY: "scroll", overflowX: "hidden" }}
-            >
-              <Import />
-              <MediaFiles />
-            </div>
+            <Import />
+            <MediaFiles />
           </div>
           <div
             style={{
@@ -107,6 +101,7 @@ function App() {
           <div
             style={{
               width: "300px",
+              overflowY: "scroll",
             }}
           >
             <PanelHeader label={<>属性</>} icon={<BarsOutlined />} />

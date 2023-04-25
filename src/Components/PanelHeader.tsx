@@ -1,4 +1,4 @@
-import { Tabs } from "antd";
+import { Tabs, theme } from "antd";
 import { ReactNode } from "react";
 
 type PanelHeaderProps = {
@@ -10,8 +10,9 @@ const PanelHeader: React.FC<PanelHeaderProps> = ({
   icon,
   label,
   extra,
-}: PanelHeaderProps) => (
-  <Tabs
+}: PanelHeaderProps) => {
+  const {token} = theme.useToken();
+  return <Tabs
     activeKey="null"
     size="middle"
     tabBarExtraContent={extra ? extra : undefined}
@@ -36,7 +37,8 @@ const PanelHeader: React.FC<PanelHeaderProps> = ({
         children: <></>,
       },
     ]}
+    style={{ position: "sticky", top: 0 , backgroundColor: token.colorBgContainer, zIndex: '1'}}
     tabBarStyle={{ marginBottom: 0 }}
   />
-);
+  };
 export default PanelHeader;
