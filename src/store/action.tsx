@@ -168,7 +168,8 @@ export const importFiles = async (
   messageApi: MessageInstance
 ) => {
   if (
-    (store.getState().reducer.importing, store.getState().reducer.exporting)
+    store.getState().reducer.importing ||
+    store.getState().reducer.exporting
   ) {
     messageApi.error("正在处理其他文件，请稍后");
     return;
