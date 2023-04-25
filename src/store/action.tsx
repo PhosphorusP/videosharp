@@ -4,6 +4,7 @@ import { cloneDeep, max, min } from "lodash-es";
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 import { nanoid } from "nanoid";
 import store from "./store";
+import { MessageInstance } from "antd/es/message/interface";
 
 const probeWorker = new FFprobeWorker();
 
@@ -17,6 +18,35 @@ const readFileAsBase64 = async (file: Blob) => {
     reader.readAsDataURL(file);
   });
 };
+
+export const getFiles = (
+  accept: String = "*",
+  multiple: Boolean = false
+): Promise<FileList> =>
+  new Promise((resolve) => {
+    const fileInput: HTMLInputElement = document.createElement("input");
+    Object.assign(fileInput, {
+      type: "file",
+      accept: accept,
+      multiple: multiple,
+    });
+    let destroyed = false;
+    const destroy = () => {
+      if (destroyed) return;
+      fileInput.remove();
+      window.removeEventListener("focus", destroy);
+      destroyed = true;
+    };
+    window.addEventListener("focus", () => {
+      destroy();
+    });
+    fileInput.addEventListener("input", () => {
+      let files = fileInput.files;
+      destroy();
+      if (files) resolve(files);
+    });
+    fileInput.click();
+  });
 
 export const formatTimestamp = (frame: number, fps: number) =>
   `${("0" + Math.floor(frame / fps / 60).toString()).slice(-2)}:${(
@@ -76,22 +106,29 @@ export const redo = () => {
   checkStateStacks();
 };
 const ffmpeg = createFFmpeg({
-  log: true,
+  log: false,
   corePath: new URL("./ffmpeg-core/ffmpeg-core.js", document.location.href)
     .href,
+});
+ffmpeg.setLogger(({ message }) => {
+  let ffmpegLogs = cloneDeep(store.getState().reducer.ffmpegLogs);
+  ffmpegLogs.push(message);
+  updateState({
+    ffmpegLogs,
+  });
 });
 export const initFF = async () => {
   store.dispatch({
     type: "updateState",
     assignments: {
-      appLoading: true,
+      ffmpegLoading: true,
     },
   });
   if (!ffmpeg.isLoaded()) await ffmpeg.load();
   store.dispatch({
     type: "updateState",
     assignments: {
-      appLoading: false,
+      ffmpegLoading: false,
     },
   });
 };
@@ -115,7 +152,16 @@ export const getTrackStart = (track: TrackClip[]) =>
     let endB = b.beginOffset;
     return a < endB ? a : endB;
   }, track[0].beginOffset);
-export const importFiles = async (files: FileList) => {
+export const importFiles = async (
+  files: FileList,
+  messageApi: MessageInstance
+) => {
+  if (
+    (store.getState().reducer.importing, store.getState().reducer.exporting)
+  ) {
+    messageApi.error("正在处理其他文件，请稍后");
+    return;
+  }
   const videoMime = ["video/mp4"];
   const mapMime = ["image/jpeg", "image/png"];
   await initFF();
@@ -138,8 +184,23 @@ export const importFiles = async (files: FileList) => {
   let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
   updateState({
     importing: true,
+    ffmpegLogs: [],
   });
-  for (let i of files) {
+  let progress = Array.prototype.map.call(files, (i: File) => ({
+    fileName: i.name,
+    progress: "waiting",
+  })) as ImportProgress;
+  updateState({
+    importProgress: progress,
+  });
+  console.log(files, progress);
+  for (let item = 0; item < files.length; item++) {
+    let i = files.item(item) as File;
+    console.log(item, i);
+    progress[item].progress = "converting";
+    updateState({
+      importProgress: progress,
+    });
     if (videoMime.indexOf(i.type) >= 0) {
       let id = nanoid();
       // get thumbnail
@@ -235,6 +296,10 @@ export const importFiles = async (files: FileList) => {
         composeRotate: 0,
       });
     }
+    progress[item].progress = "done";
+    updateState({
+      importProgress: progress,
+    });
   }
   updateState({
     mediaFiles: cloneDeep(state.mediaFiles).concat(mediaFiles),
@@ -387,6 +452,8 @@ export const setCurrentFrame = (frameNum: number) => {
   });
 };
 
+let prevVideoHost = document.createElement("video");
+
 export const composeFrame = async (
   frameNum: number,
   canvas: HTMLCanvasElement,
@@ -421,9 +488,9 @@ export const composeFrame = async (
           (i) => i.id === vid.mediaFileId
         ) as MediaFile;
         let mediaFrame = frameNum - vid.beginOffset + vid.mediaOffset;
-        let videoHost = document.getElementById(
-          "video-host"
-        ) as HTMLVideoElement;
+        let videoHost = forExport
+          ? document.createElement("video")
+          : prevVideoHost;
         let currentTime = (mediaFrame + 1) / state.projectFPS;
         await new Promise<void>((res) => {
           if (videoHost.src === mediaFile.objectURL) {
@@ -519,6 +586,15 @@ export const exportVideo = async () => {
   await initFF();
   let state = store.getState().reducer;
   const trackDuration = getTracksDuration();
+  updateState({
+    exporting: true,
+    exportProgress: {
+      framesCurrent: 0,
+      framesTotal: trackDuration,
+      audioGenerated: false,
+    } as ExportProgress,
+    ffmpegLogs: [],
+  });
   let muxer = new Muxer({
     target: new ArrayBufferTarget(),
     video: {
@@ -548,6 +624,14 @@ export const exportVideo = async () => {
     });
     videoEncoder.encode(frame, { keyFrame: i / state.projectFPS === 10 });
     frame.close();
+    updateState({
+      exporting: true,
+      exportProgress: {
+        framesCurrent: i + 1,
+        framesTotal: trackDuration,
+        audioGenerated: false,
+      } as ExportProgress,
+    });
   }
   await videoEncoder.flush();
   muxer.finalize();
@@ -562,6 +646,28 @@ export const exportVideo = async () => {
   let audioTrackArr = [];
   for (let i = 0; i < videoTrack.length; i++) {
     // insert silence between videos
+    if (getTrackStart(videoTrack) > 0) {
+      let silId = nanoid();
+      await ffmpeg.run(
+        "-f",
+        "lavfi",
+        "-i",
+        `color=size=${state.projectSize[0]}x${state.projectSize[1]}:rate=${fps}:color=black`,
+        "-f",
+        "lavfi",
+        "-i",
+        "anullsrc=channel_layout=stereo:sample_rate=44100",
+        "-t",
+        `${getTrackStart(videoTrack) / fps}`,
+        "-f",
+        "mp4",
+        `${silId}`
+      );
+      audioTrackArr.push({
+        sil: false,
+        fileName: silId,
+      } as AudioTrackItem);
+    }
     if (
       i > 0 &&
       videoTrack[i].beginOffset >
@@ -622,6 +728,14 @@ export const exportVideo = async () => {
     "generated.mp3"
   );
   ffmpeg.FS("writeFile", "composed.mp4", await fetchFile(composed));
+  updateState({
+    exporting: true,
+    exportProgress: {
+      framesCurrent: trackDuration,
+      framesTotal: trackDuration,
+      audioGenerated: true,
+    } as ExportProgress,
+  });
   await ffmpeg.run(
     "-i",
     "composed.mp4",
@@ -639,4 +753,7 @@ export const exportVideo = async () => {
   let url = URL.createObjectURL(output);
   window.open(url);
   ffmpeg.exit();
+  updateState({
+    exporting: false,
+  });
 };

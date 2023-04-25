@@ -1,9 +1,11 @@
 import { combineReducers } from "redux";
 const initialState = {
-  appLoading: false,
+  ffmpegLoading: false,
+  ffmpegLogs: [] as string[],
   projectSize: [640, 360],
   projectFPS: 30,
   importing: false,
+  importProgress: [] as ImportProgress,
   mediaFiles: [] as MediaFile[],
   videoTrack: [] as VideoTrackClip[],
   mapTracks: [] as MapTrackItem[],
@@ -18,6 +20,12 @@ const initialState = {
   redoStack: [],
   tracksSort: ["track_video"],
   draggingType: "",
+  exporting: false,
+  exportProgress: {
+    framesTotal: 0,
+    framesCurrent: 0,
+    audioGenerated: false,
+  } as ExportProgress,
 };
 const reducer = (state = initialState, action: any) => {
   switch (action.type) {

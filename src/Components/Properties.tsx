@@ -74,9 +74,6 @@ const VideoProperties: React.FC<VideoPropertiesProps> = ({
             state.projectFPS
           )}
         </Form.Item>
-        <Form.Item>
-          <Button danger>还原到素材长度</Button>
-        </Form.Item>
       </Form>
     </>
   );

@@ -7,18 +7,6 @@ const Preview: React.FC = () => {
   const canvasRef = useRef(null);
   return (
     <>
-      <video
-        id="video-host"
-        style={{
-          display: "none",
-          boxShadow: "0 0 8px red",
-          position: "fixed",
-          top: "0",
-          left: "0",
-          pointerEvents: "none",
-          zIndex: "-1000",
-        }}
-      />
       <div
         style={{
           flex: 1,

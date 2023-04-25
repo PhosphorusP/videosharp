@@ -32,3 +32,12 @@ type SubtitleTrackClip = TrackClip & {
   color: string;
 };
 type AudioTrackItem = { fileName: string };
+type ImportProgress = {
+  fileName: string;
+  progress: "waiting" | "converting" | "done";
+}[];
+type ExportProgress = {
+  framesTotal: number;
+  framesCurrent: number;
+  audioGenerated: boolean;
+};

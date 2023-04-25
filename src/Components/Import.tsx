@@ -1,11 +1,18 @@
-import { PlusOutlined } from "@ant-design/icons";
-import { App, theme } from "antd";
+import {
+  CheckOutlined,
+  EllipsisOutlined,
+  LoadingOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
+import { App, Button, Modal, Progress, Space, theme } from "antd";
 import { CSSProperties, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { importFiles } from "../store/action";
+import { getFiles, importFiles } from "../store/action";
+import FFMpegLogs from "./FFMpegLogs";
 
 const Import: React.FC = () => {
   const state: any = useSelector((state: any) => state.reducer);
+  const exportProgress = state.exportProgress as ExportProgress;
   const { token } = theme.useToken();
   const { message } = App.useApp();
   const [mask, setMask] = useState(false);
@@ -38,10 +45,9 @@ const Import: React.FC = () => {
       e.preventDefault();
       if (e.dataTransfer && e.dataTransfer!.effectAllowed !== "move") {
         let fileCnt = e.dataTransfer.files
-          ? await importFiles(e.dataTransfer.files)
+          ? await importFiles(e.dataTransfer.files, message)
           : 0;
         if (fileCnt) message.success(`已导入${fileCnt}个文件`);
-        else message.error("没有拖入可供导入的文件");
       }
 
       e.preventDefault();
@@ -71,8 +77,28 @@ const Import: React.FC = () => {
     justifyContent: "center",
     alignItems: "center",
   };
+  const statusIcons = {
+    waiting: <EllipsisOutlined style={{ color: token.colorTextDisabled }} />,
+    converting: <LoadingOutlined style={{ color: token.colorPrimary }} />,
+    done: <CheckOutlined style={{ color: token.colorSuccess }} />,
+  };
   return (
     <>
+      <div style={{ padding: "8px 8px 0 8px" }}>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={async () =>
+            importFiles(
+              await getFiles("video/mp4, image/jpeg, image/png", true),
+              message
+            )
+          }
+          block
+        >
+          导入
+        </Button>
+      </div>
       <div
         style={{
           ...maskStyle,
@@ -90,27 +116,103 @@ const Import: React.FC = () => {
           导入
         </div>
       </div>
-      <div
-        style={{
-          ...maskStyle,
-          display: state.importing ? "flex" : "none",
-        }}
+      <Modal
+        width={420}
+        open={state.importing}
+        title="正在导入文件"
+        closable={false}
+        keyboard={false}
+        maskClosable={false}
+        footer={null}
       >
-        <div style={{ color: token.colorTextLightSolid, fontSize: "24px" }}>
-          正在导入文件
-        </div>
-      </div>
+        <Space direction="vertical">
+          <div>
+            {statusIcons[state.ffmpegLoading ? "converting" : "done"]}
+            <span style={{ marginLeft: "8px" }}>加载FFmpeg</span>
+          </div>
+          {(state.importProgress as ImportProgress).map((i, index) => (
+            <div key={index}>
+              {
+                {
+                  waiting: (
+                    <EllipsisOutlined
+                      style={{ color: token.colorTextDisabled }}
+                    />
+                  ),
+                  converting: (
+                    <LoadingOutlined style={{ color: token.colorPrimary }} />
+                  ),
+                  done: <CheckOutlined style={{ color: token.colorSuccess }} />,
+                }[i.progress]
+              }
+              <span style={{ marginLeft: "8px" }}>{i.fileName}</span>
+            </div>
+          ))}
+        </Space>
+        <FFMpegLogs />
+      </Modal>
 
-      <div
-        style={{
-          ...maskStyle,
-          display: state.appLoading ? "flex" : "none",
-        }}
+      <Modal
+        width={420}
+        open={state.exporting}
+        title="正在导入导出"
+        closable={false}
+        keyboard={false}
+        maskClosable={false}
+        footer={null}
       >
-        <div style={{ color: token.colorTextLightSolid, fontSize: "24px" }}>
-          正在加载FFMPEG
-        </div>
-      </div>
+        <Space direction="vertical" style={{ width: "100%" }}>
+          <div>
+            {statusIcons[state.ffmpegLoading ? "converting" : "done"]}
+            <span style={{ marginLeft: "8px" }}>加载FFmpeg</span>
+          </div>
+          <div>
+            {
+              statusIcons[
+                state.ffmpegLoading
+                  ? "waiting"
+                  : exportProgress.framesCurrent === exportProgress.framesTotal
+                  ? "done"
+                  : "converting"
+              ]
+            }
+            <span style={{ marginLeft: "8px" }}>合成视频帧</span>
+          </div>
+          <Progress
+            percent={
+              exportProgress.framesTotal
+                ? (exportProgress.framesCurrent / exportProgress.framesTotal) *
+                  100
+                : 0
+            }
+            showInfo={false}
+          />
+          <div style={{ textAlign: "right" }}>
+            {exportProgress.framesCurrent}/{exportProgress.framesTotal}
+          </div>
+          <div>
+            {
+              statusIcons[
+                exportProgress.framesCurrent === exportProgress.framesTotal
+                  ? exportProgress.audioGenerated
+                    ? "done"
+                    : "converting"
+                  : "waiting"
+              ]
+            }
+            <span style={{ marginLeft: "8px" }}>生成音频</span>
+          </div>
+          <div>
+            {
+              statusIcons[
+                exportProgress.audioGenerated ? "converting" : "waiting"
+              ]
+            }
+            <span style={{ marginLeft: "8px" }}>导出文件</span>
+          </div>
+        </Space>
+        <FFMpegLogs />
+      </Modal>
     </>
   );
 };
