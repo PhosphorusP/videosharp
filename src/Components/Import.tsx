@@ -234,6 +234,7 @@ const Import: React.FC = () => {
         maskClosable={false}
         footer={
           <Button
+            type="primary"
             onClick={() => {
               updateState({
                 projectSize: [projectSizeX, projectSizeY],

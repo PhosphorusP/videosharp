@@ -1,11 +1,13 @@
 import {
   BarsOutlined,
+  DownloadOutlined,
   FileOutlined,
   PlayCircleOutlined,
 } from "@ant-design/icons";
 import { DndContext, DragOverlay } from "@dnd-kit/core";
 import { Button, theme } from "antd";
 import { CSSProperties, useEffect } from "react";
+import { Item, Menu } from "react-contexify";
 import { useSelector } from "react-redux";
 import "./App.css";
 import Import from "./Components/Import";
@@ -23,7 +25,6 @@ import {
   exportVideo,
   initFF,
 } from "./store/action";
-import { Item, Menu } from "react-contexify";
 
 function App() {
   const { token } = theme.useToken();
@@ -84,6 +85,7 @@ function App() {
                   size="small"
                   onClick={() => exportVideo()}
                   style={{ margin: "0 8px" }}
+                  icon={<DownloadOutlined />}
                 >
                   导出
                 </Button>
