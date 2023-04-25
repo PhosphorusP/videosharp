@@ -15,9 +15,9 @@ export const MapArtRender = ({
   if (img.artEffect === "none") return false;
   let dataCanvas = document.createElement("canvas");
   let dataCtx = dataCanvas.getContext("2d")!;
-  dataCanvas.width = imgObj.width;
-  dataCanvas.height = imgObj.height;
-  dataCtx.drawImage(imgObj, 0, 0);
+  dataCanvas.width = img.composeSize[0];
+  dataCanvas.height = img.composeSize[1];
+  dataCtx.drawImage(imgObj, 0, 0, dataCanvas.width, dataCanvas.height);
   let image = photon.open_image(dataCanvas, dataCtx);
   switch (img.artEffect) {
     case "emboss":
@@ -27,7 +27,13 @@ export const MapArtRender = ({
       photon.solarize(image);
       break;
     case "offset_red":
-      photon.offset(image, 0, 25);
+      photon.offset(
+        image,
+        0,
+        Math.sqrt(
+          Math.pow(img.composeSize[0], 2) + Math.pow(img.composeSize[1], 2)
+        ) / 50
+      );
       break;
     case "apply_gradient":
       photon.apply_gradient(image);

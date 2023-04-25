@@ -36,10 +36,12 @@ const Import: React.FC = () => {
     document.addEventListener("dragenter", defaultHandler);
     document.addEventListener("dragover", defaultHandler);
     const dragEnterHandler = (e: DragEvent) => {
+      if (initOpen) return;
       if (e.dataTransfer!.effectAllowed !== "move") setMask(true);
     };
     document.addEventListener("dragenter", dragEnterHandler);
     const dragLeaveListener: EventListener = (e: any) => {
+      if (initOpen) return;
       if (
         e.target.nodeName === "HTML" ||
         e.target === e.explicitOriginalTarget ||
@@ -54,6 +56,7 @@ const Import: React.FC = () => {
     };
     document.addEventListener("dragleave", dragLeaveListener);
     const dropHandler: any = async (e: DragEvent) => {
+      if (initOpen) return;
       setMask(false);
       e.preventDefault();
       if (e.dataTransfer && e.dataTransfer!.effectAllowed !== "move") {
