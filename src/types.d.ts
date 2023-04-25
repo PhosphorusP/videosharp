@@ -23,6 +23,7 @@ type MapTrackClip = TrackClip & {
   composePos: [number, number];
   composeSize: [number, number];
   composeRotate: number;
+  artEffect: MapArtEffects;
 };
 type SubtitleTrackItem = MultiTrackItem & { clips: SubtitleTrackClip[] };
 type SubtitleTrackClip = TrackClip & {
@@ -30,6 +31,7 @@ type SubtitleTrackClip = TrackClip & {
   composePos: [number, number];
   fontSize: number;
   color: string;
+  artEffect: SubtitleArtEffect;
 };
 type AudioTrackItem = { fileName: string };
 type ImportProgress = {
@@ -41,3 +43,10 @@ type ExportProgress = {
   framesCurrent: number;
   audioGenerated: boolean;
 };
+type MapArtEffects =
+  | "none"
+  | "emboss"
+  | "solarize"
+  | "offset_red"
+  | "apply_gradient";
+type SubtitleArtEffect = "none" | "disco";

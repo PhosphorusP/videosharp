@@ -1,7 +1,6 @@
-import { Button, Form, Input, InputNumber } from "antd";
+import { Form, Input, InputNumber, Select } from "antd";
 import { flattenDeep } from "lodash-es";
-import { useState } from "react";
-import { CompactPicker } from "react-color";
+import { HexColorPicker } from "react-colorful";
 import { useSelector } from "react-redux";
 import { formatTimestamp, saveState, updateState } from "../store/action";
 import SelectedPreview from "./SelectedPreview";
@@ -118,6 +117,7 @@ const MapProperties: React.FC<MapPropertiesProps> = ({
               clip.composeSize = [full["composeSizeX"], full["composeSizeY"]];
               clip.composePos = [full["composePosX"], full["composePosY"]];
               clip.composeRotate = full["composeRotate"];
+              clip.artEffect = full["artEffect"];
               saveState();
               updateState({ mapTracks });
               break;
@@ -170,13 +170,24 @@ const MapProperties: React.FC<MapPropertiesProps> = ({
             />
           </Form.Item>
         </Form.Item>
-
         <Form.Item label="旋转" name="composeRotate">
           <InputNumber
             keyboard={false}
             controls={false}
             addonAfter="°"
             style={{ width: "80px" }}
+          />
+        </Form.Item>
+        <Form.Item label="特效" name="artEffect">
+          <Select
+            options={[
+              { value: "none", label: "无" },
+              { value: "emboss", label: "浮雕" },
+              { value: "solarize", label: "曝光" },
+              { value: "offset_red", label: "通道偏移" },
+              { value: "apply_gradient", label: "渐变叠加" },
+            ]}
+            style={{ width: "96px" }}
           />
         </Form.Item>
       </Form>
@@ -193,10 +204,9 @@ const SubtitleProperties: React.FC<SubtitlePropertiesProps> = ({
 }: SubtitlePropertiesProps) => {
   const state: any = useSelector((state: any) => state.reducer);
   const [form] = Form.useForm();
-  const [color, setColor] = useState(selected.color);
   const formValues = {
     ...selected,
-    color,
+    color: selected.color,
     composePosX: selected.composePos[0],
     composePosY: selected.composePos[1],
   };
@@ -215,7 +225,8 @@ const SubtitleProperties: React.FC<SubtitlePropertiesProps> = ({
               clip.content = full["content"];
               clip.composePos = [full["composePosX"], full["composePosY"]];
               clip.fontSize = full["fontSize"];
-              if (full["color"]["hex"]) clip.color = full["color"].hex;
+              clip.artEffect = full["artEffect"];
+              clip.color = full["color"];
               saveState();
               updateState({ subtitleTracks });
               break;
@@ -262,15 +273,15 @@ const SubtitleProperties: React.FC<SubtitlePropertiesProps> = ({
           />
         </Form.Item>
         <Form.Item label="颜色" name="color" valuePropName="color">
-          <CompactPicker
-            color={
-              (formValues.color as any).hex
-                ? (formValues.color as any).hex
-                : formValues.color
-            }
-            onChange={(value) => {
-              setColor(value.hex);
-            }}
+          <HexColorPicker style={{ width: "64px", height: "96px" }} />
+        </Form.Item>
+        <Form.Item label="特效" name="artEffect">
+          <Select
+            options={[
+              { value: "none", label: "无" },
+              { value: "disco", label: "迪斯科" },
+            ]}
+            style={{ width: "96px" }}
           />
         </Form.Item>
       </Form>

@@ -17,7 +17,12 @@ import PreviewBottom from "./Components/PreviewBottom";
 import Properties from "./Components/Properties";
 import Timeline from "./Components/Timeline";
 import { useMediaDrag } from "./hooks/useMediaDrag";
-import { deleteClip, exportVideo, initFF } from "./store/action";
+import {
+  deleteClip,
+  deleteMediaFile,
+  exportVideo,
+  initFF,
+} from "./store/action";
 import { Item, Menu } from "react-contexify";
 
 function App() {
@@ -27,6 +32,11 @@ function App() {
     initFF();
   }, []);
   const { draggingID, handleDragStart, handleDragEnd } = useMediaDrag();
+  const contextMenuStyle = {
+    "--contexify-activeItem-bgColor": token.colorPrimary,
+    "--contexify-activeItem-color": token.colorTextLightSolid,
+    "--contexify-menu-shadow": "0 0 8px rgba(0,0,0,0.2)",
+  } as CSSProperties;
   return (
     <div className="App" style={{ display: "flex", flexDirection: "column" }}>
       <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -132,15 +142,16 @@ function App() {
         </DragOverlay>
       </DndContext>
       <Menu
+        id="contextmenu_mediafiles"
+        theme={state.darkMode ? "dark" : "light"}
+        style={contextMenuStyle}
+      >
+        <Item onClick={(e) => deleteMediaFile(e.props.id)}>删除</Item>
+      </Menu>
+      <Menu
         id="contextmenu_clips"
         theme={state.darkMode ? "dark" : "light"}
-        style={
-          {
-            "--contexify-activeItem-bgColor": token.colorPrimary,
-            "--contexify-activeItem-color": token.colorTextLightSolid,
-            "--contexify-menu-shadow": "0 0 8px rgba(0,0,0,0.2)",
-          } as CSSProperties
-        }
+        style={contextMenuStyle}
       >
         <Item onClick={(e) => deleteClip(e.props.id)}>删除此片段</Item>
       </Menu>

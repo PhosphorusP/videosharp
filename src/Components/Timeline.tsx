@@ -12,6 +12,7 @@ import {
   appendSubtitleTrack,
   composeCurrentFrame,
   getTracksDuration,
+  removeTrack,
   saveState,
   setCurrentFrame,
   updateState,
@@ -280,9 +281,17 @@ const Timeline: React.FC = () => {
                 placement="right"
                 trigger="click"
                 content={
-                  <>
-                    <Button type="text" size="small" danger>删除轨道</Button>
-                  </>
+                  <Button
+                    type="text"
+                    size="small"
+                    danger
+                    disabled={i === "track_video"}
+                    onClick={() => {
+                      removeTrack(i);
+                    }}
+                  >
+                    删除轨道
+                  </Button>
                 }
               >
                 <div

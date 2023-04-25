@@ -54,6 +54,7 @@ export function useMediaDrag() {
             Math.floor((state.projectSize[1] - mediaSize[1]) / 2),
           ],
           composeRotate: 0,
+          artEffect: "none",
         });
         updateState({
           mapTracks,

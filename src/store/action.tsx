@@ -1,12 +1,23 @@
 import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
+import { MessageInstance } from "antd/es/message/interface";
 import { FFprobeWorker } from "ffprobe-wasm";
 import { cloneDeep, max, min } from "lodash-es";
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 import { nanoid } from "nanoid";
 import store from "./store";
-import { MessageInstance } from "antd/es/message/interface";
+import { MapArtRender, SubtitleArtRender } from "../utils/ArtRenders";
 
 const probeWorker = new FFprobeWorker();
+
+// (()=> {
+//   import("@silvia-odwyer/photon").then((photon) => {
+//     console.log("photon loaded.");
+//     console.log(photon);
+//   });
+// })()
+(async () => {
+  console.log(await import("@silvia-odwyer/photon"));
+})();
 
 const readFileAsBase64 = async (file: Blob) => {
   return new Promise<string>((resolve, reject) => {
@@ -294,6 +305,7 @@ export const importFiles = async (
           Math.floor((state.projectSize[1] - scaledMediaSize[1]) / 2),
         ],
         composeRotate: 0,
+        artEffect: "none",
       });
     }
     progress[item].progress = "done";
@@ -310,34 +322,38 @@ export const importFiles = async (
   ffmpeg.exit();
   return mediaFiles.length;
 };
-
+export const deleteMediaFile = (id: string) => {
+  let state = store.getState().reducer;
+  updateState({
+    mediaFiles: (cloneDeep(state.mediaFiles) as MediaFile[]).filter(
+      (i) => i.id !== id
+    ),
+    videoTrack: (cloneDeep(state.videoTrack) as VideoTrackClip[]).filter(
+      (i) => i.mediaFileId !== id
+    ),
+    mapTracks: (cloneDeep(state.mapTracks) as MapTrackItem[]).map((tr) => ({
+      ...tr,
+      clips: tr.clips.filter((i) => i.mediaFileId !== id),
+    })),
+  });
+};
 export const deleteClip = (id: string) => {
   let state = store.getState().reducer;
-  let videoTrack = cloneDeep(state.videoTrack) as VideoTrackClip[];
-  let mapTracks = cloneDeep(state.mapTracks) as MapTrackItem[];
-  let subtitleTracks = cloneDeep(state.subtitleTracks) as SubtitleTrackItem[];
-  if (videoTrack.findIndex((i) => i.id === id) >= 0)
-    videoTrack.splice(
-      videoTrack.findIndex((i) => i.id === id),
-      1
-    );
-  for (let mapTrack of mapTracks)
-    if (mapTrack.clips.findIndex((i) => i.id === id) >= 0)
-      mapTrack.clips.splice(
-        mapTrack.clips.findIndex((i) => i.id === id),
-        1
-      );
-  for (let subtitleTrack of subtitleTracks)
-    if (subtitleTrack.clips.findIndex((i) => i.id === id) >= 0)
-      subtitleTrack.clips.splice(
-        subtitleTrack.clips.findIndex((i) => i.id === id),
-        1
-      );
   saveState();
   updateState({
-    videoTrack,
-    mapTracks,
-    subtitleTracks,
+    videoTrack: (cloneDeep(state.videoTrack) as VideoTrackClip[]).filter(
+      (i) => i.id !== id
+    ),
+    mapTracks: (cloneDeep(state.mapTracks) as MapTrackItem[]).map((tr) => ({
+      ...tr,
+      clips: tr.clips.filter((i) => i.id !== id),
+    })),
+    subtitleTracks: (
+      cloneDeep(state.subtitleTracks) as SubtitleTrackItem[]
+    ).map((tr) => ({
+      ...tr,
+      clips: tr.clips.filter((i) => i.id !== id),
+    })),
     selectedId: "",
   });
   alignTracks();
@@ -374,6 +390,23 @@ export const appendSubtitleTrack = () => {
   updateState({
     subtitleTracks,
     tracksSort,
+  });
+};
+
+export const removeTrack = (i: string) => {
+  let id: string;
+  if (i.indexOf("track_map") === 0) id = i.split("track_map_").at(-1)!;
+  else id = i.split("track_subtitle_").at(-1)!;
+  updateState({
+    mapTracks: (
+      cloneDeep(store.getState().reducer.mapTracks) as MapTrackItem[]
+    ).filter((tr) => tr.id !== id),
+    subtitleTracks: (
+      cloneDeep(store.getState().reducer.subtitleTracks) as SubtitleTrackItem[]
+    ).filter((tr) => tr.id !== id),
+    tracksSort: (
+      cloneDeep(store.getState().reducer.tracksSort) as string[]
+    ).filter((tr) => tr.toString() !== i),
   });
 };
 
@@ -536,18 +569,20 @@ export const composeFrame = async (
           imgObj.onload = res;
           imgObj.src = mediaFile.objectURL;
         });
-        ctx.translate(
-          img.composePos[0] + img.composeSize[0] / 2,
-          img.composePos[1] + img.composeSize[1] / 2
-        );
-        ctx.rotate((img.composeRotate * Math.PI) / 180);
-        ctx.drawImage(
-          imgObj,
-          -img.composeSize[0] / 2,
-          -img.composeSize[1] / 2,
-          img.composeSize[0],
-          img.composeSize[1]
-        );
+        if (!MapArtRender({ ctx, img, imgObj })) {
+          ctx.translate(
+            img.composePos[0] + img.composeSize[0] / 2,
+            img.composePos[1] + img.composeSize[1] / 2
+          );
+          ctx.rotate((img.composeRotate * Math.PI) / 180);
+          ctx.drawImage(
+            imgObj,
+            -img.composeSize[0] / 2,
+            -img.composeSize[1] / 2,
+            img.composeSize[0],
+            img.composeSize[1]
+          );
+        }
       }
     } else if (trackId.indexOf("track_subtitle_") === 0) {
       let subtitleTracks = state.subtitleTracks as SubtitleTrackItem[];
@@ -560,14 +595,23 @@ export const composeFrame = async (
           frameNum <= i.beginOffset + i.duration - 1
       ) as SubtitleTrackClip;
       if (subtitle) {
-        ctx.font = `${subtitle.fontSize}px  sans-serif`;
-        ctx.textBaseline = "top";
-        ctx.fillStyle = subtitle.color;
-        ctx.fillText(
-          subtitle.content,
-          subtitle.composePos[0],
-          subtitle.composePos[1]
-        );
+        if (
+          !SubtitleArtRender({
+            ctx,
+            subtitle,
+            frameNum,
+            projectFPS: state.projectFPS,
+          })
+        ) {
+          ctx.font = `${subtitle.fontSize}px  sans-serif`;
+          ctx.textBaseline = "top";
+          ctx.fillStyle = subtitle.color;
+          ctx.fillText(
+            subtitle.content,
+            subtitle.composePos[0],
+            subtitle.composePos[1]
+          );
+        }
       }
     }
   }

@@ -381,6 +381,7 @@ const SubtitleTrackClip: React.FC<SubtitleTrackClipProps> = ({
                   fontSize: 24,
                   color: "#FFF",
                   backgroundColor: "#007AFF",
+                  artEffect: "none",
                 } as SubtitleTrackClip);
               saveState();
               updateState({ subtitleTracks: tmpSubtitleTracks });

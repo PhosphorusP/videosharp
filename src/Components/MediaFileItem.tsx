@@ -1,5 +1,6 @@
 import { useDraggable } from "@dnd-kit/core";
 import { theme } from "antd";
+import { useContextMenu } from "react-contexify";
 import { useSelector } from "react-redux";
 
 type MediaFileItemProps = {
@@ -25,6 +26,9 @@ const MediaFileItem: React.FC<MediaFileItemProps> = ({
     },
   });
   const { token } = theme.useToken();
+  const { show: showContextMenu } = useContextMenu({
+    id: "contextmenu_mediafiles",
+  });
   return (
     <div
       ref={setNodeRef}
@@ -36,6 +40,7 @@ const MediaFileItem: React.FC<MediaFileItemProps> = ({
         display: "inline-block",
         cursor: "default",
       }}
+      onContextMenu={(e) => showContextMenu({ event: e, props: { id } })}
     >
       <div
         style={{
