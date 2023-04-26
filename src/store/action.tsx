@@ -4,20 +4,10 @@ import { FFprobeWorker } from "ffprobe-wasm";
 import { cloneDeep, max, min } from "lodash-es";
 import { ArrayBufferTarget, Muxer } from "mp4-muxer";
 import { nanoid } from "nanoid";
-import store from "./store";
 import { MapArtRender, SubtitleArtRender } from "../utils/ArtRenders";
+import store from "./store";
 
 const probeWorker = new FFprobeWorker();
-
-// (()=> {
-//   import("@silvia-odwyer/photon").then((photon) => {
-//     console.log("photon loaded.");
-//     console.log(photon);
-//   });
-// })()
-(async () => {
-  console.log(await import("@silvia-odwyer/photon"));
-})();
 
 const readFileAsBase64 = async (file: Blob) => {
   return new Promise<string>((resolve, reject) => {
@@ -205,10 +195,8 @@ export const importFiles = async (
   updateState({
     importProgress: progress,
   });
-  console.log(files, progress);
   for (let item = 0; item < files.length; item++) {
     let i = files.item(item) as File;
-    console.log(item, i);
     progress[item].progress = "converting";
     updateState({
       importProgress: progress,
