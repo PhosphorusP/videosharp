@@ -1,4 +1,6 @@
-# Getting Started with Create React App
+# VideoSharp
+
+Edit video with map & subtitle tracks in your browser!
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
