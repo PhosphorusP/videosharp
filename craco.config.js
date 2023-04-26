@@ -5,7 +5,7 @@ module.exports = {
       webpackConfig.resolve.extensions.push(".wasm");
       webpackConfig.experiments = {
         asyncWebAssembly: false,
-        lazyCompilation: true,
+        lazyCompilation: false,
         syncWebAssembly: true,
         topLevelAwait: true,
       };

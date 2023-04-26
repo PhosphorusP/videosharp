@@ -2,6 +2,7 @@
   "name": "videosharp",
   "version": "0.1.0",
   "private": true,
+  "homepage": ".",
   "dependencies": {
     "@ant-design/icons": "^5.0.1",
     "@dnd-kit/core": "^6.0.8",
@@ -48,8 +49,7 @@
   },
   "eslintConfig": {
     "extends": [
-      "react-app",
-      "react-app/jest"
+      "react-app"
     ]
   },
   "browserslist": {
