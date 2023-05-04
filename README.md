@@ -2,6 +2,8 @@
 
 Edit video with map & subtitle tracks in your browser!
 
+![image](https://user-images.githubusercontent.com/13076466/236272113-e361a997-bf48-4bca-a5ca-ade820bc0554.png)
+
 Using FFMpeg.wasm and mp4-muxer to process video.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
