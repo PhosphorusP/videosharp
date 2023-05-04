@@ -92,7 +92,7 @@ const MapTransform: React.FC<MapTransformProps> = ({
       cy,
       leftTop[0] + (handleAnchor[0] / 100) * size[0],
       leftTop[1] + (handleAnchor[1] / 100) * size[1],
-      img.composeRotate
+      -img.composeRotate
     ) as [number, number];
   };
   const changeStartHandler = (anchor: string, e?: any) => {
